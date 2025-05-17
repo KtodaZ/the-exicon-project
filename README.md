@@ -15,7 +15,7 @@ This project aims to build an open, extensible version of that resource.
 
 
 ## 🤝 Contributing
-We welcome contributions of all kinds—from fixing typos to adding new exercises!
+We welcome contributions of all kinds!
 Start with the CONTRIBUTING.md guide to learn how to get involved.
 
 You can also browse issues labeled good first issue to find a place to start.
