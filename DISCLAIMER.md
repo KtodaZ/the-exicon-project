@@ -1,4 +1,5 @@
 # Disclaimer
+
 The Exicon Project is a free, open source resource maintained by members of the F3 community. It provides descriptions of exercises and routines that are often physically demanding.
 
 Use of this information is strictly at your own risk.

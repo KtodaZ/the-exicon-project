@@ -1,16 +1,17 @@
 # The Exicon Project
 
-**An open source exercise lexicon for F3 Qs — built by the PAX, for the PAX.**  
+**An open source exercise lexicon for F3 Qs — built by the PAX, for the PAX.**
 
-The Exicon Project is a community-driven effort to build, refine, and maintain an up-to-date exercise lexicon (Exicon) for F3 workouts. 
+The Exicon Project is a community-driven effort to build, refine, and maintain an up-to-date exercise lexicon (Exicon) for F3 workouts.
 This project provides a platform for Qs across regions to contribute new routines, update existing entries, and share the creative fitness traditions of the F3 Nation.
 
 ---
 
 ## 📚 What is the Exicon?
+
 The Exicon is a collection of named exercises used in F3 workouts, often paired with a unique story, method, or tradition. It helps Qs (leaders) bring consistency, creativity, and fun to beatdowns while honoring F3's culture and mission.
 
-You can view the official Exicon at [f3nation.com/Exicon](https://f3nation.com/Exicon).  
+You can view the official Exicon at [f3nation.com/Exicon](https://f3nation.com/Exicon).
 
 This project aims to build an open, extensible version of that resource.
 
