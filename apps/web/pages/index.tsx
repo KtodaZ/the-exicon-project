@@ -9,7 +9,17 @@ import {
 import { defaultMetaProps } from '@/components/layout/meta';
 import clientPromise from '@/lib/mongodb';
 
-export default function Home({ user }: { user: UserProps }) {
+export default function Home({ user }: { user: UserProps | null }) {
+  // Show a placeholder message if no user is found
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h1 className="text-3xl font-bold">Welcome to The Exicon Project</h1>
+        <p className="mt-4 text-xl">No users found. Please create a user to get started.</p>
+      </div>
+    );
+  }
+  
   return <Profile user={user} settings={false} />;
 }
 

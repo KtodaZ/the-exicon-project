@@ -5,6 +5,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const setup = async () => {
+  // Skip database setup in production environments
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Skipping database setup in production environment');
+    return;
+  }
+  
+  // Check for MongoDB URI
+  if (!process.env.MONGODB_URI) {
+    console.warn('MONGODB_URI not found in environment variables. Skipping database setup.');
+    return;
+  }
+  
   let client;
 
   try {

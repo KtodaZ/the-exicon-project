@@ -30,26 +30,56 @@ export default function Profile({
   const { data: session } = useSession();
   const [saving, setSaving] = useState(false);
   const [data, setData] = useState({
-    username: user.username,
-    image: user.image,
-    bio: user.bio || '',
-    bioMdx: user.bioMdx
+    username: user?.username || '',
+    image: user?.image || '/placeholder.png',
+    bio: user?.bio || '',
+    bioMdx: user?.bioMdx
   });
-
-  if (data.username !== user.username) {
-    setData(user);
-  }
-
   const [error, setError] = useState('');
   const settingsPage =
     settings ||
     (router.query.settings === 'true' && router.asPath === '/settings');
 
   const handleDismiss = useCallback(() => {
-    if (settingsPage) router.replace(`/${user.username}`);
+    if (settingsPage && user) router.replace(`/${user.username}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, settingsPage, user]);
+  
+  // Update data if username changes
+  useEffect(() => {
+    if (user && data.username !== user.username) {
+      setData({
+        username: user.username,
+        image: user.image || '/placeholder.png',
+        bio: user.bio || '',
+        bioMdx: user.bioMdx
+      });
+    }
+  }, [user, data.username]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const onKeyDown = async (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      handleDismiss();
+    } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      await handleSave();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [onKeyDown]);
+
+  // Ensure user object is not null before rendering content
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white">User profile not found</p>
+      </div>
+    );
+  }
+  
   const handleSave = async () => {
     setError('');
     setSaving(true);
@@ -78,20 +108,6 @@ export default function Profile({
     }
     setSaving(false);
   };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const onKeyDown = async (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      handleDismiss();
-    } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      await handleSave();
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [onKeyDown]);
 
   return (
     <div className="min-h-screen pb-20">
