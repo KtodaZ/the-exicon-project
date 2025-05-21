@@ -23,13 +23,14 @@ const setup = async () => {
     }
 
     const records = [...Array(10)].map(() => {
-      const [fName, lName] = faker.name.findName().split(' ');
-      const username = faker.internet.userName(fName, lName);
-      const email = faker.internet.email(fName, lName);
-      const image = faker.image.people(640, 480, true);
+      const firstName = faker.person.firstName();
+      const lastName = faker.person.lastName();
+      const username = faker.internet.userName({ firstName, lastName });
+      const email = faker.internet.email({ firstName, lastName });
+      const image = faker.image.avatar();
 
       return {
-        name: `${fName} ${lName}`,
+        name: `${firstName} ${lastName}`,
         username,
         email,
         image,
@@ -47,6 +48,7 @@ const setup = async () => {
       console.log('Successfully inserted records');
     }
   } catch (error) {
+    console.error('Database error:', error);
     return 'Database is not ready yet';
   } finally {
     if (client) {
@@ -57,8 +59,8 @@ const setup = async () => {
 
 try {
   setup();
-} catch {
-  console.warn('Database is not ready yet. Skipping seeding...');
+} catch (error) {
+  console.warn('Database is not ready yet. Skipping seeding...', error);
 }
 
 export { setup };
