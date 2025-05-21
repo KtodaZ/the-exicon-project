@@ -30,3 +30,29 @@ Please read our full DISCLAIMER.md before participating in or performing any exe
 ## 📄 License
 
 This project is licensed under the MIT License.
+
+## Packages
+
+### Exicon Fetcher
+
+A utility package that fetches and stores exercise lexicon (Exicon) data from the F3 Nation API. The package handles:
+
+- Fetching the complete list of exercises (~780 items)
+- Retrieving detailed information for each exercise
+- Extracting video URLs from the content
+- Storing the data locally for further processing
+
+To use:
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm build
+
+# Run the fetcher
+cd packages/exicon-fetcher && pnpm fetch
+```
+
+This will create a `data` directory with summaries, details, and extracted video URLs for all exercises in the F3 Exicon.

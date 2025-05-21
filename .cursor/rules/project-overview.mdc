@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+TurboRepo project using pnpm with the following tech preferences:
+- pnpm
+- turborepo
+- typescript
+- fastify (for apis)
+- nextjs
+- vercel

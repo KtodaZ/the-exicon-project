@@ -1,0 +1,37 @@
+{
+  "name": "exicon-fetcher",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rimraf ./dist && tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/**/*.ts",
+    "check-types": "tsc --noEmit",
+    "clean": "rimraf ./dist",
+    "start": "node dist/index.js",
+    "fetch": "node dist/fetchExicons.js",
+    "enhance": "node dist/enhanceBatchExicon.js",
+    "test": "node dist/testBatchEnhance.js",
+    "demo-ai": "node dist/demoAiSdk.js",
+    "check-deps": "node dist/checkDependencies.js",
+    "upload": "node dist/uploadToMongo.js"
+  },
+  "dependencies": {
+    "ai": "^2.2.31",
+    "dotenv": "^16.5.0",
+    "fs-extra": "^11.1.1",
+    "mongodb": "^6.16.0",
+    "node-fetch": "^2.6.7",
+    "openai": "^4.100.0",
+    "rimraf": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^18.19.100",
+    "@types/node-fetch": "^2.6.12",
+    "eslint": "^8.57.1",
+    "typescript": "^5.8.2"
+  }
+}
