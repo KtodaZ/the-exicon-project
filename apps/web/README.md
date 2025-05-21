@@ -1,41 +1,56 @@
-# MongoDB Starter – Developer Directory
+# The Exicon Project - Web App
 
-A developer directory built on [Next.js](https://nextjs.org/) and [MongoDB Atlas](https://www.mongodb.com/atlas/database), deployed on [Vercel](https://vercel.com/) with the [Vercel + MongoDB integration](https://vercel.com/integrations/mongodbatlas).
+A clean, blank slate web application built with Next.js and MongoDB.
 
-![](/public/og.png)
+## Features
 
-Featured on the [MongoDB World](https://www.mongodb.com/world-2022) keynote.
+- **Next.js Framework**: Fast, server-rendered React applications
+- **MongoDB Integration**: Ready-to-use database connection
+- **Authentication**: Set up with NextAuth.js 
+- **Tailwind CSS**: Utility-first CSS framework
+- **TypeScript**: Type safety throughout the codebase
 
-## Deployment Instructions
+## Getting Started
 
-You will need to create a [GitHub OAuth App](https://docs.github.com/en/developers/apps/building-oauth-apps/creating-an-oauth-app) to use this starter. Here are the steps:
+1. **Install dependencies**
 
-1. Go to https://github.com/settings/developers and create a new OAuth application
-2. Name your application **"MongoDB Starter"**
-3. Set the homepage URL to **`https://vercel.app`** for now (we'll change this later)
-4. Set the authorization callback URL to **`https://vercel.app/api/auth/callback/github`** for now (we'll change this later)
-5. Click "Register application".
-6. Once the application is created, copy the "Client ID". This will be your **`GITHUB_CLIENT_ID`**.
-7. Generate a new client secret and copy that too. This will be your **`GITHUB_CLIENT_SECRET`**.
-8. Generate a random secret [here](https://generate-secret.vercel.app/32). This will be your **`NEXTAUTH_SECRET`**.
-9. Click on this button below to clone and deploy this template to Vercel.
+```bash
+pnpm install
+```
 
-  [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fmongodb-starter&project-name=mongodb-nextjs&repository-name=mongodb-nextjs&demo-title=MongoDB%20Developer%20Directory&demo-description=Log%20in%20with%20GitHub%20to%20create%20a%20directory%20of%20contacts.&demo-url=https%3A%2F%2Fmongodb.vercel.app%2F&demo-image=https%3A%2F%2Fmongodb.vercel.app%2Fog.png&integration-ids=oac_jnzmjqM10gllKmSrG0SGrHOH&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET&envDescription=Instructions%20on%20how%20to%20configure%20these%20env%20vars:&envLink=https://github.com/vercel/mongodb-starter/blob/main/.env.example)
+2. **Set up environment variables**
 
-10. Once your application is deployed, **edit the homepage & callback URLs in your GitHub OAuth App to match your deployment URL**.
+Create a `.env` file in the root directory with the following variables:
 
-## Demo
+```
+MONGODB_URI=your_mongodb_connection_string
+NEXTAUTH_SECRET=your_nextauth_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+```
 
-https://mongodb.vercel.app
+3. **Run the development server**
 
-## Vercel + MongoDB Integration
+```bash
+pnpm dev
+```
 
-https://vercel.com/integrations/mongodbatlas
+Your application will be available at [http://localhost:3000](http://localhost:3000).
 
-## Tech Stack
+## Project Structure
 
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [NextAuth.js](https://next-auth.js.org/)
-- [MongoDB Atlas](https://www.mongodb.com/atlas/database)
-- [Vercel](https://vercel.com/)
+- `/pages`: Next.js pages and API routes
+- `/components`: Reusable React components
+- `/lib`: Utility functions and shared code
+- `/styles`: Global CSS and Tailwind configuration
+- `/public`: Static assets
+
+## API Routes
+
+The application includes a basic API endpoint:
+
+- `GET /api/hello`: Basic health check, returns MongoDB connection status
+
+## MongoDB Setup
+
+This project uses MongoDB for data storage. The database connection is established in `lib/mongodb.ts` using the MongoDB Node.js driver.
