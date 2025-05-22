@@ -29,9 +29,9 @@
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^18.19.100",
+    "@types/node": "^22.15.3",
     "@types/node-fetch": "^2.6.12",
-    "eslint": "^8.57.1",
+    "eslint": "^9.26.0",
     "typescript": "^5.8.2"
   }
 }

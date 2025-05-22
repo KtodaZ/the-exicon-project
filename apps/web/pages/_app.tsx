@@ -2,6 +2,7 @@ import '@/styles/globals.css';
 import { AppProps } from 'next/app';
 import { SessionProvider } from 'next-auth/react';
 import Head from 'next/head';
+import { MainLayout } from '@/components/layout/main-layout';
 
 export default function MyApp({
   Component,
@@ -11,12 +12,12 @@ export default function MyApp({
     <SessionProvider session={session}>
       <Head>
         <title>The Exicon Project</title>
-        <meta name="description" content="The Exicon Project - A blank canvas for your next great idea" />
+        <meta name="description" content="The Exicon Project - A comprehensive exercise collection" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <div className="min-h-screen bg-black text-white">
+      <MainLayout>
         <Component {...pageProps} />
-      </div>
+      </MainLayout>
     </SessionProvider>
   );
 }
