@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface TagBadgeProps extends BadgeProps {
   tag: string;
   active?: boolean;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
   href?: string;
 }
 

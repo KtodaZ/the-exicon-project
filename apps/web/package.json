@@ -5,6 +5,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "setup": "NODE_OPTIONS='--experimental-json-modules' node ./scripts/setup.mjs"
   },
   "dependencies": {

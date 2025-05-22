@@ -259,7 +259,7 @@ export default function ExiconPage({
 
                       {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                         // Show pages around current page
-                        let pageNum;
+                        let pageNum: number;
                         if (totalPages <= 5) {
                           pageNum = i + 1;
                         } else if (currentPage <= 3) {

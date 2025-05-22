@@ -1,19 +1,31 @@
-import Meta, { defaultMetaProps } from '@/components/layout/meta';
-export { getStaticProps } from '.';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { GetStaticProps } from 'next';
+import Head from 'next/head';
 
 export default function Custom500() {
   return (
-    <div className="h-screen w-full flex justify-center items-center bg-black">
-      <Meta
-        props={{
-          ...defaultMetaProps,
-          title: '500 | MongoDB Starter Kit',
-          ogUrl: 'https://mongodb.vercel.app/500'
-        }}
-      />
-      <h1 className="text-2xl font-light text-white">
-        500 <span className="mx-3 text-4xl">|</span> Internal Server Occured
-      </h1>
-    </div>
+    <>
+      <Head>
+        <title>500 - Server Error | The Exicon Project</title>
+      </Head>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h1 className="text-6xl font-bold text-gray-900 dark:text-white mb-4">500</h1>
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+          Internal server error
+        </p>
+        <Link href="/">
+          <Button variant="red">
+            Return Home
+          </Button>
+        </Link>
+      </div>
+    </>
   );
 }
+
+export const getStaticProps: GetStaticProps = async () => {
+  return {
+    props: {}
+  };
+};

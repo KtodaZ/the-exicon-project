@@ -24,11 +24,11 @@ export async function getAllExercises(
   const cached = cache.get(cacheKey) as { exercises: ExerciseListItem[]; totalCount: number }
   
   if (cached && cached.exercises.length > 0) {
-    console.log('getAllExercises cached', cached);
+    console.log('getAllExercises using cached result with', cached.exercises.length, 'exercises');
     return cached;
   }
 
-  console.log('MongoDB connection starting...');
+  console.log('MongoDB connection starting for getAllExercises...');
   const client = await clientPromise;
   const db = client.db();
   console.log('Connected to database:', db.databaseName);
@@ -41,6 +41,7 @@ export async function getAllExercises(
   try {
     // Check if the collection exists and has documents
     const collectionExists = await db.listCollections({ name: 'exercises' }).toArray();
+    console.log('Collection exists check:', collectionExists.length > 0);
     
     if (collectionExists.length === 0) {
       console.error('Collection "exercises" does not exist');
@@ -51,23 +52,42 @@ export async function getAllExercises(
     const totalDocuments = await collection.countDocuments({});
     console.log('Total documents in collection:', totalDocuments);
     
-    const [exercises, totalCount] = await Promise.all([
-      collection
-        .find({})
-        .sort({ name: 1 })
-        .skip(skip)
-        .limit(limit)
-        .project<ExerciseListItem>({
-          _id: 1,
-          name: 1,
-          description: 1,
-          tags: 1,
-          urlSlug: 1,
-          difficulty: 1
-        })
-        .toArray(),
-      collection.countDocuments({})
-    ]);
+    if (totalDocuments === 0) {
+      console.warn('Exercise collection exists but is empty');
+      return { exercises: [], totalCount: 0 };
+    }
+    
+    // Get sample document to check structure
+    const sampleDoc = await collection.findOne({});
+    console.log('Sample document ID type:', typeof sampleDoc?._id, 'Value:', sampleDoc?._id);
+    
+    console.log('Running exercises query with pagination...');
+    const exercises = await collection
+      .find({})
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .project<ExerciseListItem>({
+        _id: 1,
+        name: 1,
+        description: 1,
+        tags: 1,
+        urlSlug: 1,
+        difficulty: 1
+      })
+      .toArray();
+      
+    console.log('Found', exercises.length, 'exercises');
+    if (exercises.length > 0) {
+      console.log('First result ID type:', typeof exercises[0]._id);
+      console.log('First result:', {
+        _id: exercises[0]._id,
+        name: exercises[0].name,
+        urlSlug: exercises[0].urlSlug
+      });
+    }
+    
+    const totalCount = await collection.countDocuments({});
     
     const result = { exercises, totalCount };
     cache.set(cacheKey, result);
@@ -136,15 +156,15 @@ export async function getSimilarExercises(
   const client = await clientPromise;
   const db = client.db();
   
+  console.log('Finding similar exercises for tags:', tags, 'excluding ID:', excludeId);
+  
   // First try to find exercises with exact same tags
   let similarExercises = await db
     .collection('exercises')
     .find<ExerciseListItem>({
-      $and: [
-        { _id: { $ne: new ObjectId(excludeId) } },
-        { urlSlug: { $ne: excludeId } }, // Also filter by urlSlug to catch string IDs
-        { tags: { $all: tags } }
-      ]
+      // Use type assertion to fix TypeScript error
+      _id: { $ne: excludeId } as any,
+      tags: { $all: tags }
     })
     .limit(limit)
     .project({
@@ -157,16 +177,18 @@ export async function getSimilarExercises(
     })
     .toArray();
 
+  console.log(`Found ${similarExercises.length} exercises with exact tag match`);
+  
   // If we don't have enough matches, find exercises with at least one matching tag
   if (similarExercises.length < limit) {
     const remaining = limit - similarExercises.length;
     const existingIds = similarExercises.map(ex => ex._id);
-    const objectIdExistingIds = existingIds.map(id => new ObjectId(id.toString()));
     
     const additionalExercises = await db
       .collection('exercises')
       .find<ExerciseListItem>({
-        _id: { $ne: new ObjectId(excludeId), $nin: objectIdExistingIds },
+        // Use type assertion to fix TypeScript error
+        _id: { $ne: excludeId, $nin: existingIds } as any,
         tags: { $in: tags }
       })
       .limit(remaining)
@@ -179,6 +201,8 @@ export async function getSimilarExercises(
         difficulty: 1
       })
       .toArray();
+    
+    console.log(`Found ${additionalExercises.length} additional exercises with partial tag match`);
     
     similarExercises = [...similarExercises, ...additionalExercises];
   }
@@ -199,7 +223,8 @@ export async function searchExercises(
   const cached = cache.get(cacheKey);
   
   if (cached) {
-    console.log('searchExercises using cached result:', cached);
+    console.log('searchExercises using cached result with', 
+      (cached as any).exercises?.length || 0, 'exercises');
     return cached as { exercises: ExerciseListItem[]; totalCount: number };
   }
 
@@ -225,52 +250,75 @@ export async function searchExercises(
     console.log('Adding tags filter:', tags);
   }
   
-  console.log('Final filter:', filter);
+  console.log('Final filter:', JSON.stringify(filter, null, 2));
   
   try {
     // Check if the collection exists and has documents
     const collectionExists = await db.listCollections({ name: 'exercises' }).toArray();
-    console.log('Collection exists check:', collectionExists);
     
     if (collectionExists.length === 0) {
       console.error('Collection "exercises" does not exist');
       return { exercises: [], totalCount: 0 };
     }
     
-    // Check if text index exists
+    // Check total documents in collection
+    const totalDocuments = await db.collection('exercises').countDocuments({});
+    console.log('Total documents in collection:', totalDocuments);
+    
+    if (totalDocuments === 0) {
+      console.warn('Exercise collection exists but is empty');
+      return { exercises: [], totalCount: 0 };
+    }
+    
+    // Check if text index exists if using text search
     if (query && query.trim() !== '') {
       const indexes = await db.collection('exercises').indexes();
       console.log('Available indexes:', indexes);
-      const textIndexExists = indexes.some(index => index.key && index.key._fts === 'text');
+      
+      const textIndexExists = indexes.some(index => 
+        index.key && (index.key._fts === 'text' || Object.values(index.key).includes('text'))
+      );
+      
       if (!textIndexExists) {
-        console.warn('No text index found on exercises collection!');
+        console.warn('No text index found on exercises collection! Text search will not work properly.');
+        console.log('Creating a basic filter instead of text search');
+        // Fall back to basic search if no text index
+        delete filter.$text;
+        filter.$or = [
+          { name: { $regex: query, $options: 'i' } },
+          { description: { $regex: query, $options: 'i' } }
+        ];
       }
     }
     
-    const [exercises, totalCount] = await Promise.all([
-      db
-        .collection('exercises')
-        .find(filter)
-        .sort(query ? { score: { $meta: 'textScore' } } : { name: 1 })
-        .skip(skip)
-        .limit(limit)
-        .project<ExerciseListItem>({
-          _id: 1,
-          name: 1,
-          description: 1,
-          tags: 1,
-          urlSlug: 1,
-          difficulty: 1,
-          ...(query ? { score: { $meta: 'textScore' } } : {})
-        })
-        .toArray(),
-      db.collection('exercises').countDocuments(filter)
-    ]);
+    console.log('Executing search query...');
+    const exercises = await db
+      .collection('exercises')
+      .find(filter)
+      .sort(query && filter.$text ? { score: { $meta: 'textScore' } } : { name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .project<ExerciseListItem>({
+        _id: 1,
+        name: 1,
+        description: 1,
+        tags: 1,
+        urlSlug: 1,
+        difficulty: 1,
+        ...(query && filter.$text ? { score: { $meta: 'textScore' } } : {})
+      })
+      .toArray();
+    
+    const totalCount = await db.collection('exercises').countDocuments(filter);
     
     console.log('searchExercises results:', { 
       exercisesCount: exercises.length, 
       totalCount,
-      firstExercise: exercises.length > 0 ? exercises[0] : null
+      firstExercise: exercises.length > 0 ? {
+        _id: exercises[0]._id,
+        name: exercises[0].name,
+        urlSlug: exercises[0].urlSlug
+      } : null
     });
     
     const result = { exercises, totalCount };
@@ -316,14 +364,12 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
 // Add diagnostic function
 export async function checkExerciseCollection(): Promise<{ exists: boolean; count: number; sample?: any }> {
   try {
-    console.log('Diagnosing exercise collection...');
     const client = await clientPromise;
     const db = client.db();
     
     // Check if collection exists
     const collections = await db.listCollections({ name: 'exercises' }).toArray();
     const exists = collections.length > 0;
-    console.log('Exercise collection exists:', exists);
     
     if (!exists) {
       return { exists: false, count: 0 };
@@ -332,13 +378,11 @@ export async function checkExerciseCollection(): Promise<{ exists: boolean; coun
     // Check document count
     const collection = db.collection('exercises');
     const count = await collection.countDocuments({});
-    console.log('Exercise collection document count:', count);
     
     // Get a sample document
     let sample = null;
     if (count > 0) {
       sample = await collection.findOne({});
-      console.log('Sample document:', JSON.stringify(sample, null, 2));
     }
     
     // Check indexes

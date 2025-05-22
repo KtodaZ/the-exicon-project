@@ -2,8 +2,13 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Head from "next/head";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GetStaticProps } from 'next';
 
-export default function Home() {
+interface HomeProps {
+  isConnected?: boolean;
+}
+
+export default function Home({ isConnected }: HomeProps) {
   return (
     <>
       <Head>
@@ -101,4 +106,13 @@ export default function Home() {
       </div>
     </>
   );
+}
+
+export const getStaticProps: GetStaticProps<HomeProps> = async () => {
+  return {
+    props: {
+      isConnected: true
+    },
+    revalidate: 10
+  };
 }

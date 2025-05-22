@@ -2,7 +2,7 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { ButtonProps, Button } from "@/components/ui/button";
+import { ButtonProps, buttonVariants } from "@/components/ui/button";
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav
@@ -36,27 +36,43 @@ PaginationItem.displayName = "PaginationItem";
 
 type PaginationLinkProps = {
   isActive?: boolean;
-} & Pick<ButtonProps, "size"> &
-  React.ComponentProps<"a">;
+  size?: ButtonProps["size"];
+  className?: string;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  href?: string;
+  children?: React.ReactNode;
+};
 
 const PaginationLink = ({
   className,
   isActive,
   size = "icon",
+  onClick,
+  href,
+  children,
   ...props
-}: PaginationLinkProps) => (
-  <Button
-    aria-current={isActive ? "page" : undefined}
-    variant={isActive ? "red" : "outline"}
-    size={size}
-    className={cn(
-      "w-9 h-9 rounded-md",
-      isActive && "pointer-events-none",
-      className
-    )}
-    {...props}
-  />
-);
+}: PaginationLinkProps) => {
+  // Create a custom element that looks like a button but is actually an anchor
+  return (
+    <a
+      aria-current={isActive ? "page" : undefined}
+      onClick={onClick}
+      href={href}
+      className={cn(
+        buttonVariants({
+          variant: isActive ? "red" : "outline",
+          size: size,
+        }),
+        "w-9 h-9 rounded-md",
+        isActive && "pointer-events-none",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </a>
+  );
+};
 PaginationLink.displayName = "PaginationLink";
 
 const PaginationPrevious = ({
