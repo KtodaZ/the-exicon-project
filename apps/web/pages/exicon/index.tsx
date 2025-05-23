@@ -1,21 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants, type ButtonProps } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ExerciseCard } from '@/components/exercise-card';
 import { TagBadge } from '@/components/ui/tag-badge';
 import { ExerciseListItem } from '@/lib/models/exercise';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from '@/components/ui/pagination';
 import { Search, X } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { SearchBar } from '@/components/ui/searchbar';
+import { TagList } from '@/components/ui/tag-list';
+import { ActiveFilters, FilterItem } from '@/components/ui/active-filters';
 
 interface ExiconPageProps {
   initialExercises: ExerciseListItem[];
@@ -40,12 +36,23 @@ export default function ExiconPage({
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeTags, setActiveTags] = useState<string[]>(initialTags);
   const [currentPage, setCurrentPage] = useState(initialPage);
+  const [hasMore, setHasMore] = useState(initialExercises.length < totalCount);
+  const [currentTotalCount, setCurrentTotalCount] = useState(totalCount);
   const exercisesPerPage = 12;
-  const totalPages = Math.ceil(totalCount / exercisesPerPage);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastExerciseElementRef = useRef<HTMLDivElement | null>(null);
+
+  // Reset exercises when filters change
+  useEffect(() => {
+    if (currentPage === 1) {
+      setExercises(initialExercises);
+      setHasMore(initialExercises.length < totalCount);
+    }
+  }, [initialExercises, totalCount, currentPage]);
 
   // Update URL when filters change
   useEffect(() => {
-    const query: any = { page: currentPage };
+    const query: any = {};
     
     if (searchQuery) {
       query.query = searchQuery;
@@ -59,17 +66,14 @@ export default function ExiconPage({
       pathname: '/exicon',
       query
     }, undefined, { shallow: true });
-    
-    // Load exercises
-    loadExercises();
-  }, [currentPage, searchQuery, activeTags]);
+  }, [searchQuery, activeTags, router]);
 
-  const loadExercises = async () => {
+  const loadExercises = useCallback(async (page: number) => {
     setLoading(true);
     
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('page', currentPage.toString());
+      queryParams.append('page', page.toString());
       queryParams.append('limit', exercisesPerPage.toString());
       
       if (searchQuery) {
@@ -83,17 +87,55 @@ export default function ExiconPage({
       const response = await fetch(`/api/exercises?${queryParams.toString()}`);
       const data = await response.json();
       
-      setExercises(data.exercises);
+      if (page === 1) {
+        setExercises(data.exercises);
+        setCurrentTotalCount(data.totalCount);
+        setHasMore(data.exercises.length < data.totalCount);
+      } else {
+        setExercises(prev => {
+          const newExercises = [...prev, ...data.exercises];
+          setHasMore(newExercises.length < data.totalCount);
+          return newExercises;
+        });
+      }
     } catch (error) {
       console.error('Error loading exercises:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, activeTags, exercisesPerPage]);
+
+  // Trigger search when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    loadExercises(1);
+  }, [loadExercises]);
+
+  // Setup intersection observer for infinite scroll
+  const lastExerciseRef = useCallback((node: HTMLDivElement) => {
+    if (loading) return;
+    
+    if (observer.current) {
+      observer.current.disconnect();
+    }
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setCurrentPage(prevPage => prevPage + 1);
+        loadExercises(currentPage + 1);
+      }
+    });
+    
+    if (node) {
+      observer.current.observe(node);
+      lastExerciseElementRef.current = node;
+    }
+  }, [loading, hasMore, currentPage]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
+    setCurrentPage(1);
+    loadExercises(1);
   };
 
   const toggleTag = (tag: string) => {
@@ -102,18 +144,11 @@ export default function ExiconPage({
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-    setCurrentPage(1); // Reset to first page when tag filters change
   };
 
   const clearFilters = () => {
     setSearchQuery('');
     setActiveTags([]);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -136,88 +171,43 @@ export default function ExiconPage({
 
           {/* Search and filters */}
           <div className="mb-8 space-y-6">
-            <form onSubmit={handleSearch} className="max-w-md">
-              <div className="relative">
-                <Input
-                  type="search"
-                  placeholder="Search exercises..."
-                  className="pl-10 pr-4"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                <Button 
-                  type="submit" 
-                  variant="red" 
-                  className="absolute right-1 top-1 h-7 px-2 rounded-md"
-                >
-                  Search
-                </Button>
-              </div>
-            </form>
+            <SearchBar
+              placeholder="Search exercises..."
+              defaultValue={searchQuery}
+              onSearch={(value) => {
+                setSearchQuery(value);
+              }}
+              className="max-w-md"
+            />
 
             {/* Popular tags */}
             <div>
               <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
                 Popular Tags
               </h2>
-              <div className="flex flex-wrap gap-2">
-                {popularTags.map(({ tag, count }) => (
-                  <TagBadge
-                    key={tag}
-                    tag={`${tag} (${count})`}
-                    active={activeTags.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  />
-                ))}
-              </div>
+              <TagList 
+                tags={popularTags}
+                activeTags={activeTags}
+                onTagClick={toggleTag}
+              />
             </div>
 
             {/* Active filters */}
             {(activeTags.length > 0 || searchQuery) && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Active Filters
-                  </h2>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={clearFilters}
-                    className="h-8 px-2 text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Clear all
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {searchQuery && (
-                    <div className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-md px-3 py-1">
-                      <span className="text-sm mr-2">Search: {searchQuery}</span>
-                      <button 
-                        onClick={() => setSearchQuery('')}
-                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                  {activeTags.map(tag => (
-                    <div 
-                      key={tag} 
-                      className="flex items-center bg-gray-200 dark:bg-gray-800 rounded-md px-3 py-1"
-                    >
-                      <span className="text-sm mr-2">Tag: {tag}</span>
-                      <button 
-                        onClick={() => toggleTag(tag)}
-                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <ActiveFilters
+                filters={[
+                  ...(searchQuery ? [{ type: 'Search', value: searchQuery }] : []),
+                  ...activeTags.map(tag => ({ type: 'Tag', value: tag }))
+                ]}
+                onRemove={(filter) => {
+                  if (filter.type === 'Search') {
+                    setSearchQuery('');
+                  } else if (filter.type === 'Tag') {
+                    toggleTag(filter.value);
+                  }
+                }}
+                onClearAll={clearFilters}
+              />
             )}
           </div>
 
@@ -225,80 +215,32 @@ export default function ExiconPage({
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {loading ? 'Loading...' : `${totalCount} Exercises`}
+                {`${currentTotalCount} Exercises`}
               </h2>
             </div>
 
             {exercises.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                  {exercises.map(exercise => (
-                    <ExerciseCard
-                      key={exercise._id}
-                      exercise={exercise}
-                      onTagClick={toggleTag}
-                    />
+                  {exercises.map((exercise, index) => (
+                    <div 
+                      key={exercise._id} 
+                      ref={index === exercises.length - 1 ? lastExerciseRef : null}
+                    >
+                      <ExerciseCard
+                        exercise={exercise}
+                        onTagClick={toggleTag}
+                      />
+                    </div>
                   ))}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <Pagination className="my-8">
-                    <PaginationContent>
-                      {currentPage > 1 && (
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            href="#" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(currentPage - 1);
-                            }} 
-                          />
-                        </PaginationItem>
-                      )}
-
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        // Show pages around current page
-                        let pageNum: number;
-                        if (totalPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
-                        } else {
-                          pageNum = currentPage - 2 + i;
-                        }
-
-                        return (
-                          <PaginationItem key={pageNum}>
-                            <PaginationLink
-                              href="#"
-                              isActive={currentPage === pageNum}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePageChange(pageNum);
-                              }}
-                            >
-                              {pageNum}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-
-                      {currentPage < totalPages && (
-                        <PaginationItem>
-                          <PaginationNext 
-                            href="#" 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(currentPage + 1);
-                            }} 
-                          />
-                        </PaginationItem>
-                      )}
-                    </PaginationContent>
-                  </Pagination>
+                {/* Loading indicator */}
+                {loading && (
+                  <div className="flex justify-center items-center py-8">
+                    <Spinner variant="red" />
+                    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading more exercises...</span>
+                  </div>
                 )}
               </>
             ) : (
@@ -309,7 +251,10 @@ export default function ExiconPage({
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
                   Try adjusting your search or filter criteria
                 </p>
-                <Button variant="outline" onClick={clearFilters}>
+                <Button 
+                  onClick={clearFilters}
+                  className="border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground"
+                >
                   Clear all filters
                 </Button>
               </div>
@@ -330,13 +275,20 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   
   try {
     // Fetch exercises
+    const queryParams = new URLSearchParams();
+    queryParams.append('page', currentPage.toString());
+    queryParams.append('limit', '12');
+    
+    if (searchQuery) {
+      queryParams.append('query', searchQuery);
+    }
+    
+    selectedTags.forEach(tag => {
+      queryParams.append('tags', tag);
+    });
+    
     const exercisesRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises?${new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '12',
-        ...(searchQuery && { query: searchQuery }),
-        ...selectedTags.reduce((acc, tag) => ({ ...acc, tags: tag }), {})
-      }).toString()}`
+      `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises?${queryParams.toString()}`
     );
     
     const { exercises, totalCount } = await exercisesRes.json();

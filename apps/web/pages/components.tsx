@@ -1,7 +1,13 @@
-import { Button } from "@/components/ui/button";
+import * as React from "react";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { SearchBar } from "@/components/ui/searchbar";
+import { TagList } from "@/components/ui/tag-list";
+import { FilterPill } from "@/components/ui/filter-pill";
+import { ActiveFilters } from "@/components/ui/active-filters";
 
 export default function ComponentsPage() {
   return (
@@ -106,6 +112,113 @@ export default function ComponentsPage() {
             </svg>
           </div>
         </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">SearchBar Component</h2>
+        <div className="max-w-md">
+          <SearchBar
+            placeholder="Search exercises..."
+            buttonText="Search"
+          />
+        </div>
+        <div className="max-w-md mt-4">
+          <SearchBar
+            placeholder="Search without button..."
+            showButton={false}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Tag Lists</h2>
+        <div>
+          <h3 className="text-lg font-medium mb-2">Regular Tags</h3>
+          <TagList
+            tags={["cardio", "strength", "yoga", "mobility", "recovery"]}
+          />
+        </div>
+        <div>
+          <h3 className="text-lg font-medium mb-2">Tags with Counts</h3>
+          <TagList
+            tags={[
+              { tag: "cardio", count: 42 },
+              { tag: "strength", count: 85 },
+              { tag: "yoga", count: 23 },
+              { tag: "mobility", count: 18 },
+              { tag: "recovery", count: 12 }
+            ]}
+          />
+        </div>
+        <div>
+          <h3 className="text-lg font-medium mb-2">Active Tags</h3>
+          <TagList
+            tags={["cardio", "strength", "yoga", "mobility", "recovery"]}
+            activeTags={["strength", "mobility"]}
+            variant="red"
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Spinners</h2>
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-col items-center">
+            <Spinner size="sm" />
+            <span className="mt-2 text-sm">Small</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Spinner />
+            <span className="mt-2 text-sm">Medium</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Spinner size="lg" />
+            <span className="mt-2 text-sm">Large</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Spinner variant="primary" />
+            <span className="mt-2 text-sm">Primary</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <Spinner variant="red" />
+            <span className="mt-2 text-sm">Red</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Filter Pills</h2>
+        <div className="flex flex-wrap gap-2">
+          <FilterPill
+            label="Search"
+            value="burpee"
+            onRemove={() => alert('Remove search filter')}
+          />
+          <FilterPill
+            label="Tag"
+            value="cardio"
+            variant="gray"
+            onRemove={() => alert('Remove tag filter')}
+          />
+          <FilterPill
+            label="Category"
+            value="strength"
+            onRemove={() => alert('Remove category filter')}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Active Filters</h2>
+        <ActiveFilters
+          filters={[
+            { type: 'Search', value: 'push-up' },
+            { type: 'Tag', value: 'chest' },
+            { type: 'Tag', value: 'bodyweight' }
+          ]}
+          onRemove={(filter) => alert(`Remove ${filter.type}: ${filter.value}`)}
+          onClearAll={() => alert('Clear all filters')}
+        />
       </section>
     </div>
   );

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ExerciseDetail } from '@/lib/models/exercise';
 import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
+import { VideoPlayer } from '@/components/video-player';
 
 interface ExerciseDetailPageProps {
   exercise: ExerciseDetail;
@@ -69,36 +70,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
             
             {/* Video */}
             <div className="bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video mb-8 flex items-center justify-center overflow-hidden">
-              {video_url ? (
-                <video 
-                  controls 
-                  className="w-full h-full"
-                  poster="/video-placeholder.png"
-                >
-                  <source src={video_url} type="video/quicktime" />
-                  Your browser does not support the video tag.
-                </video>
-              ) : (
-                <div className="text-center p-8">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-16 w-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={1.5} 
-                      d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" 
-                    />
-                  </svg>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No video available for this exercise
-                  </p>
-                </div>
-              )}
+              <VideoPlayer src={video_url} />
             </div>
             
             {/* Exercise content */}
@@ -145,18 +117,26 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { slug } = context.params as { slug: string };
   
+  console.log('getServerSideProps called with slug:', slug);
+  
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises/${slug}`
-    );
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises/${slug}`;
+    console.log('Fetching from URL:', apiUrl);
+    
+    const res = await fetch(apiUrl);
+    
+    console.log('Response status:', res.status);
+    console.log('Response ok:', res.ok);
     
     if (!res.ok) {
+      console.log('Response not ok, returning null exercise');
       return {
         props: { exercise: null }
       };
     }
     
     const exercise = await res.json();
+    console.log('Exercise fetched successfully:', exercise?.name);
     
     return {
       props: { exercise }

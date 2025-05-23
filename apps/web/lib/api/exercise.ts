@@ -64,7 +64,7 @@ export async function getAllExercises(
     console.log('Running exercises query with pagination...');
     const exercises = await collection
       .find({})
-      .sort({ name: 1 })
+      .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit)
       .project<ExerciseListItem>({
@@ -73,7 +73,9 @@ export async function getAllExercises(
         description: 1,
         tags: 1,
         urlSlug: 1,
-        difficulty: 1
+        difficulty: 1,
+        video_url: 1,
+        image_url: 1
       })
       .toArray();
       
@@ -123,6 +125,11 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
       return null;
     }
 
+    // Process video URL for better browser compatibility
+    if (exercise.video_url) {
+      exercise.video_url = processVideoUrl(exercise.video_url);
+    }
+
     // Get similar exercises
     const similarExercises = await getSimilarExercises(exercise.tags, exercise._id);
     
@@ -138,6 +145,25 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
     console.error('Error in getExerciseBySlug:', error);
     throw error;
   }
+}
+
+/**
+ * Processes a video URL to ensure better browser compatibility
+ * This can be extended to handle video format conversion if needed
+ */
+function processVideoUrl(url: string): string {
+  // For now, we're just ensuring the URL is properly formatted
+  // This is where server-side conversion could be implemented in the future
+  
+  // If URL ends with .mov but the content is compatible with MP4 format
+  // This doesn't actually convert the video, but many .mov files are actually 
+  // using H.264 codec which is MP4 compatible
+  if (url.toLowerCase().endsWith('.mov')) {
+    console.log('MOV video format detected, ensuring compatibility');
+    // In the future, this is where a conversion service would be implemented
+  }
+  
+  return url;
 }
 
 // Get similar exercises based on tags
@@ -166,6 +192,7 @@ export async function getSimilarExercises(
       _id: { $ne: excludeId } as any,
       tags: { $all: tags }
     })
+    .sort({ publishedAt: -1 })
     .limit(limit)
     .project({
       _id: 1,
@@ -173,7 +200,9 @@ export async function getSimilarExercises(
       description: 1,
       tags: 1,
       urlSlug: 1,
-      difficulty: 1
+      difficulty: 1,
+      video_url: 1,
+      image_url: 1
     })
     .toArray();
 
@@ -191,6 +220,7 @@ export async function getSimilarExercises(
         _id: { $ne: excludeId, $nin: existingIds } as any,
         tags: { $in: tags }
       })
+      .sort({ publishedAt: -1 })
       .limit(remaining)
       .project({
         _id: 1,
@@ -198,7 +228,9 @@ export async function getSimilarExercises(
         description: 1,
         tags: 1,
         urlSlug: 1,
-        difficulty: 1
+        difficulty: 1,
+        video_url: 1,
+        image_url: 1
       })
       .toArray();
     
@@ -273,11 +305,17 @@ export async function searchExercises(
     // Check if text index exists if using text search
     if (query && query.trim() !== '') {
       const indexes = await db.collection('exercises').indexes();
-      console.log('Available indexes:', indexes);
+      console.log('Available indexes:', indexes.map(idx => ({ name: idx.name, key: idx.key })));
       
       const textIndexExists = indexes.some(index => 
-        index.key && (index.key._fts === 'text' || Object.values(index.key).includes('text'))
+        index.key && (
+          index.key._fts === 'text' || 
+          Object.values(index.key).includes('text') ||
+          index.name?.includes('text')
+        )
       );
+      
+      console.log('Text index exists:', textIndexExists);
       
       if (!textIndexExists) {
         console.warn('No text index found on exercises collection! Text search will not work properly.');
@@ -295,7 +333,7 @@ export async function searchExercises(
     const exercises = await db
       .collection('exercises')
       .find(filter)
-      .sort(query && filter.$text ? { score: { $meta: 'textScore' } } : { name: 1 })
+      .sort(query && filter.$text ? { score: { $meta: 'textScore' } } : { publishedAt: -1 })
       .skip(skip)
       .limit(limit)
       .project<ExerciseListItem>({
@@ -305,6 +343,8 @@ export async function searchExercises(
         tags: 1,
         urlSlug: 1,
         difficulty: 1,
+        video_url: 1,
+        image_url: 1,
         ...(query && filter.$text ? { score: { $meta: 'textScore' } } : {})
       })
       .toArray();

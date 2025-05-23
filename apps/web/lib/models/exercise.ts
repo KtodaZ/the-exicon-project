@@ -27,6 +27,7 @@ export interface Exercise {
   };
   urlSlug: string;
   video_url: string | null;
+  image_url?: string | null;
 }
 
 export interface ExerciseListItem {
@@ -36,6 +37,8 @@ export interface ExerciseListItem {
   tags: string[];
   urlSlug: string;
   difficulty: number;
+  video_url?: string | null;
+  image_url?: string | null;
 }
 
 export interface ExerciseDetail extends Exercise {

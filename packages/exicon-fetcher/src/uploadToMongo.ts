@@ -2,8 +2,7 @@ import { MongoClient, Collection } from 'mongodb';
 import fs from 'fs-extra';
 import path from 'path';
 import dotenv from 'dotenv';
-import { EnhancedExiconItem } from './types';
-import { EnhancementResult } from './llmProcessor';
+import { SimplifiedExiconItem } from './types';
 
 // Load environment variables
 dotenv.config();
@@ -11,22 +10,59 @@ dotenv.config();
 // MongoDB connection string from environment variable
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.MONGODB_DB_NAME || 'exicon';
-const COLLECTION_NAME = 'exicon-items';
+const COLLECTION_NAME = 'exercises';
 
 // File paths
 const OUTPUT_DIR = path.resolve(process.cwd(), 'data');
-const DEFAULT_INPUT_FILE = path.join(OUTPUT_DIR, 'all-exicon-items-batch-revised.json');
+const DEFAULT_INPUT_FILE = path.join(OUTPUT_DIR, 'all-exicon-items.json');
 
+// For alias handling
 interface AliasObject {
   name: string;
-  id?: string;
+  id: string;
 }
 
-interface MongoExiconItem extends Omit<EnhancedExiconItem, 'aliases'>, EnhancementResult {
-  _id: string; // Using external_id as _id
+// For MongoDB document input
+interface ExiconInput {
+  external_id: string;
+  name?: string;
+  description?: string;
+  categories?: string;
+  text?: string;
+  video_url?: string | null;
+  image_url?: string | null;
+  publishedAt?: string;
+  urlSlug?: string;
+  postURL?: string;
+  aliases?: Array<string | { name: string; id?: string }>;
+  tags?: string[];
+  confidence?: number;
+  quality?: number;
+  author?: string;
+  difficulty?: number;
+}
+
+// MongoDB document structure
+interface MongoExiconItem {
+  _id: string;
+  external_id: string;
+  name: string;
+  description: string;
+  categories: string;
+  text: string;
+  video_url: string | null;
+  image_url: string | null;
+  publishedAt: string;
+  urlSlug: string;
+  postURL: string;
+  aliases: AliasObject[];
+  tags: string[];
+  confidence: number;
+  quality: number;
+  author: string;
+  difficulty: number;
   createdAt: Date;
   updatedAt: Date;
-  aliases: Array<{ name: string; id: string }>;
 }
 
 async function connectToMongo(): Promise<Collection<MongoExiconItem>> {
@@ -59,7 +95,7 @@ async function uploadToMongo(inputFilePath?: string): Promise<void> {
     console.log(`Reading enhanced data from: ${actualInputFile}`);
     
     // Read the input JSON file
-    const items: EnhancedExiconItem[] = await fs.readJSON(actualInputFile);
+    const items = await fs.readJSON(actualInputFile);
     console.log(`Found ${items.length} items to upload`);
     
     // Connect to MongoDB
@@ -67,33 +103,46 @@ async function uploadToMongo(inputFilePath?: string): Promise<void> {
     
     // Prepare items for MongoDB
     const now = new Date();
-    const mongoItems: MongoExiconItem[] = items.map(item => {
-      const enhancedItem = item as EnhancedExiconItem & EnhancementResult;
-      return {
-        ...item,
-        _id: item.external_id,
-        createdAt: now,
-        updatedAt: now,
-        aliases: enhancedItem.aliases.map(alias => {
-          // Handle both string and object aliases
+    const mongoItems = items.map((item: ExiconInput) => {
+      // Handle aliases based on its type
+      let aliases: AliasObject[] = [];
+      if (Array.isArray(item.aliases)) {
+        aliases = item.aliases.map((alias: any) => {
           if (typeof alias === 'string') {
             return {
               name: alias,
               id: alias.toLowerCase().replace(/\s+/g, '-')
             };
+          } else if (typeof alias === 'object' && alias !== null) {
+            return {
+              name: alias.name || '',
+              id: alias.id || (alias.name ? alias.name.toLowerCase().replace(/\s+/g, '-') : '')
+            };
           }
-          const aliasObj = alias as AliasObject;
-          return {
-            name: aliasObj.name,
-            id: aliasObj.id || aliasObj.name.toLowerCase().replace(/\s+/g, '-')
-          };
-        }),
-        tags: enhancedItem.tags || [],
-        confidence: enhancedItem.confidence || 0,
-        quality: enhancedItem.quality || 0,
-        author: enhancedItem.author || 'N/A',
-        difficulty: enhancedItem.difficulty || 0,
-        time: enhancedItem.time || 1
+          return { name: '', id: '' };
+        });
+      }
+      
+      return {
+        _id: item.external_id,
+        external_id: item.external_id,
+        name: item.name || '',
+        description: item.description || '',
+        categories: item.categories || '',
+        text: item.text || '',
+        video_url: item.video_url || null,
+        image_url: item.image_url || null,
+        publishedAt: item.publishedAt || '',
+        urlSlug: item.urlSlug || '',
+        postURL: item.postURL || '',
+        aliases: aliases,
+        tags: item.tags || [],
+        confidence: item.confidence || 0,
+        quality: item.quality || 0,
+        author: item.author || 'N/A',
+        difficulty: item.difficulty || 0,
+        createdAt: now,
+        updatedAt: now
       };
     });
     
@@ -105,35 +154,41 @@ async function uploadToMongo(inputFilePath?: string): Promise<void> {
     const batchSize = 100;
     for (let i = 0; i < mongoItems.length; i += batchSize) {
       const batch = mongoItems.slice(i, i + batchSize);
-      const operations = batch.map(item => ({
-        updateOne: {
-          filter: { _id: item._id },
-          update: { 
-            $set: {
-              // Only update specific fields we want to maintain
-              name: item.name,
-              categories: item.categories,
-              description: item.description,
-              aliases: item.aliases,
-              tags: item.tags,
-              confidence: item.confidence,
-              quality: item.quality,
-              author: item.author,
-              difficulty: item.difficulty,
-              text: item.text,
-              video_url: item.video_url,
-              urlSlug: item.urlSlug,
-              postURL: item.postURL,
-              updatedAt: now
+      const originalBatch = items.slice(i, i + batchSize);
+      const operations = batch.map((item: MongoExiconItem, index: number) => {
+        const originalItem = originalBatch[index];
+        return {
+          updateOne: {
+            filter: { _id: item._id },
+            update: { 
+              $set: Object.fromEntries([
+                ['updatedAt', now],
+                ...(originalItem.name !== undefined ? [['name', item.name]] : []),
+                ...(originalItem.description !== undefined ? [['description', item.description]] : []),
+                ...(originalItem.categories !== undefined ? [['categories', item.categories]] : []),
+                ...(originalItem.aliases !== undefined ? [['aliases', item.aliases]] : []),
+                ...(originalItem.tags !== undefined ? [['tags', item.tags]] : []),
+                ...(originalItem.confidence !== undefined ? [['confidence', item.confidence]] : []),
+                ...(originalItem.quality !== undefined ? [['quality', item.quality]] : []),
+                ...(originalItem.author !== undefined ? [['author', item.author]] : []),
+                ...(originalItem.difficulty !== undefined ? [['difficulty', item.difficulty]] : []),
+                ...(originalItem.text !== undefined ? [['text', item.text]] : []),
+                ...(originalItem.video_url !== undefined ? [['video_url', item.video_url]] : []),
+                ...(originalItem.image_url !== undefined ? [['image_url', item.image_url]] : []),
+                ...(originalItem.publishedAt !== undefined ? [['publishedAt', item.publishedAt]] : []),
+                ...(originalItem.urlSlug !== undefined ? [['urlSlug', item.urlSlug]] : []),
+                ...(originalItem.postURL !== undefined ? [['postURL', item.postURL]] : [])
+              ]),
+              $setOnInsert: {
+                _id: item._id,
+                external_id: item.external_id,
+                createdAt: now
+              }
             },
-            $setOnInsert: {
-              _id: item._id,
-              createdAt: now
-            }
-          },
-          upsert: true
-        }
-      }));
+            upsert: true
+          }
+        };
+      });
       
       try {
         const result = await collection.bulkWrite(operations);

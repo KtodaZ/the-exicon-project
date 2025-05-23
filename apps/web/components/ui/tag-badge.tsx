@@ -1,12 +1,14 @@
-import { Badge, BadgeProps } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-interface TagBadgeProps extends BadgeProps {
+export interface TagBadgeProps {
   tag: string;
   active?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   href?: string;
+  variant?: "default" | "secondary" | "destructive" | "outline" | "red";
+  className?: string;
 }
 
 export function TagBadge({ 
@@ -27,7 +29,6 @@ export function TagBadge({
         className
       )}
       onClick={onClick}
-      {...props}
     >
       {tag}
     </Badge>

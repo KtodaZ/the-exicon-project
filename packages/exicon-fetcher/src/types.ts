@@ -93,6 +93,7 @@ export interface VideoMap {
 export interface SimplifiedExiconItem {
   external_id: string;
   video_url: string | null;
+  image_url: string | null;
   categories: string;  // Comma-separated list of categories
   name: string;
   description: string;
@@ -100,6 +101,7 @@ export interface SimplifiedExiconItem {
   text: string;  // Parsed text from rawHTML
   sourceRawHTML: string;
   postURL: string;
+  publishedAt: string;
 }
 
 // Enhanced exicon item with additional fields from OpenAI

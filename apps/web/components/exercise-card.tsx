@@ -3,6 +3,8 @@ import { ExerciseListItem } from "@/lib/models/exercise";
 import { TagBadge } from "@/components/ui/tag-badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { VideoPlayer } from './video-player';
+import Image from "next/image";
 
 interface ExerciseCardProps {
   exercise: ExerciseListItem;
@@ -11,7 +13,7 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardProps) {
-  const { name, description, tags, urlSlug, difficulty } = exercise;
+  const { name, description, tags, urlSlug, difficulty, video_url, image_url } = exercise;
   
   // Function to determine difficulty level text and color
   const getDifficultyInfo = (difficultyValue: number) => {
@@ -22,53 +24,75 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
   
   const difficultyInfo = getDifficultyInfo(difficulty);
 
+  const handleTagClick = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onTagClick) {
+      onTagClick(tag);
+    }
+  };
+
   return (
     <Card className={cn("h-full transition-all hover:shadow-md", className)}>
-      <Link href={`/exicon/${urlSlug}`} className="block h-full">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl font-bold line-clamp-2">{name}</CardTitle>
-          <p className={cn("text-sm font-medium", difficultyInfo.className)}>
-            {difficultyInfo.text}
-          </p>
-        </CardHeader>
-        <CardContent className="pb-4">
-          <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-12 w-12 text-gray-400 dark:text-gray-600" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={1.5} 
-                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" 
-              />
-            </svg>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 line-clamp-3 text-sm">
-            {description}
-          </p>
-        </CardContent>
-        <CardFooter className="flex flex-wrap gap-2 pt-0">
-          {tags.slice(0, 5).map((tag) => (
-            <TagBadge
-              key={tag}
-              tag={tag}
-              variant="outline"
-              onClick={onTagClick ? (e) => {
-                e.preventDefault();
-                onTagClick(tag);
-              } : undefined}
-            />
-          ))}
-          {tags.length > 5 && (
-            <span className="text-xs text-gray-500">+{tags.length - 5} more</span>
-          )}
-        </CardFooter>
+      <Link href={`/exicon/${urlSlug}`}>
+        <div className="cursor-pointer">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl font-bold line-clamp-2">{name}</CardTitle>
+            <p className={cn("text-sm font-medium", difficultyInfo.className)}>
+              {difficultyInfo.text}
+            </p>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center overflow-hidden">
+              {image_url ? (
+                <div className="relative w-full h-full">
+                  <Image 
+                    src={image_url} 
+                    alt={name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover"
+                  />
+                </div>
+              ) : video_url ? (
+                <div className="w-full h-full pointer-events-none">
+                  <VideoPlayer src={video_url} />
+                </div>
+              ) : (
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-12 w-12 text-gray-400 dark:text-gray-600" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1.5} 
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" 
+                  />
+                </svg>
+              )}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 line-clamp-3 text-sm">
+              {description}
+            </p>
+          </CardContent>
+        </div>
       </Link>
+      <CardFooter className="flex flex-wrap gap-2 pt-0">
+        {tags.slice(0, 5).map((tag) => (
+          <TagBadge
+            key={tag}
+            tag={tag}
+            onClick={onTagClick ? (e) => handleTagClick(tag, e) : undefined}
+          />
+        ))}
+        {tags.length > 5 && (
+          <span className="text-xs text-gray-500">+{tags.length - 5} more</span>
+        )}
+      </CardFooter>
     </Card>
   );
 }

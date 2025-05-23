@@ -151,13 +151,15 @@ function simplifyExiconItem(post: BlogPostSummary, detail: BlogPostContentRespon
   return {
     external_id: post._id,
     video_url: getFirstVideoUrl(videoUrls),
+    image_url: post.imageUrl || detail.blogPost.imageUrl || null,
     categories: categoryLabels.join(', '),
     name: post.title,
     description: post.description,
     urlSlug: post.urlSlug,
     text: extractTextFromHtml(detail.blogPost.rawHTML),
     sourceRawHTML: detail.blogPost.rawHTML,
-    postURL: `${BASE_POST_URL}${post.urlSlug}`
+    postURL: `${BASE_POST_URL}${post.urlSlug}`,
+    publishedAt: post.publishedAt || detail.blogPost.publishedAt
   };
 }
 
@@ -171,6 +173,8 @@ async function saveToCSV(items: SimplifiedExiconItem[], filePath: string): Promi
     'description',
     'text',
     'video_url',
+    'image_url',
+    'publishedAt',
     'urlSlug',
     'postURL'
   ].join(',');
@@ -192,6 +196,8 @@ async function saveToCSV(items: SimplifiedExiconItem[], filePath: string): Promi
       escapeCsvField(item.description),
       escapeCsvField(item.text),
       escapeCsvField(item.video_url),
+      escapeCsvField(item.image_url),
+      escapeCsvField(item.publishedAt),
       escapeCsvField(item.urlSlug),
       escapeCsvField(item.postURL)
     ].join(',');
@@ -222,6 +228,7 @@ async function fetchAllExiconData() {
     
     // Step 2: Fetch details for each blog post with a delay between requests
     const simplifiedItems: SimplifiedExiconItem[] = [];
+    const seenNames = new Set<string>();
     
     // Limit to just a few items for testing
     const processLimit = blogPosts.length;
@@ -238,6 +245,12 @@ async function fetchAllExiconData() {
       
       const { urlSlug, title } = post;
       
+      // Skip if we've already seen this name
+      if (seenNames.has(title)) {
+        console.log(`  Skipping duplicate exicon with name: ${title}`);
+        continue;
+      }
+      
       console.log(`[${i + 1}/${processLimit}] Processing: ${title} (${urlSlug})`);
       
       try {
@@ -248,8 +261,9 @@ async function fetchAllExiconData() {
         console.log('  Converting to simplified format...');
         const simplifiedItem = simplifyExiconItem(post, detailResponse);
         
-        // Add to the collection
+        // Add to the collection and mark name as seen
         simplifiedItems.push(simplifiedItem);
+        seenNames.add(title);
         
         // Add a small delay between requests to avoid rate limiting
         if (i < processLimit - 1) {
@@ -260,6 +274,8 @@ async function fetchAllExiconData() {
         // Continue with the next post even if this one fails
       }
     }
+    
+    console.log(`Found ${seenNames.size} unique exicons out of ${processLimit} total items`);
     
     // Save all simplified items in a single file
     const allItemsPath = path.join(OUTPUT_DIR, 'all-exicon-items.json');
@@ -272,7 +288,7 @@ async function fetchAllExiconData() {
     await saveToCSV(simplifiedItems, csvPath);
     
     console.log('Completed fetching all exicon data!');
-    console.log(`Processed ${simplifiedItems.length} items`);
+    console.log(`Processed ${simplifiedItems.length} unique items`);
     console.log(`Data saved to: ${OUTPUT_DIR}`);
     
   } catch (error) {
