@@ -120,7 +120,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   console.log('getServerSideProps called with slug:', slug);
   
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises/${slug}`;
+    // Properly construct the base URL with protocol
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3000' 
+      : `https://${process.env.VERCEL_URL || process.env.NEXT_PUBLIC_API_URL || 'the-exicon-project.vercel.app'}`;
+    
+    const apiUrl = `${baseUrl}/api/exercises/${slug}`;
     console.log('Fetching from URL:', apiUrl);
     
     const res = await fetch(apiUrl);

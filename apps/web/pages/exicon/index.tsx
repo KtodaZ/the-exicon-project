@@ -287,15 +287,22 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       queryParams.append('tags', tag);
     });
     
+    // Properly construct the base URL with protocol
+    const baseUrl = process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : `https://${process.env.VERCEL_URL || process.env.NEXT_PUBLIC_API_URL || 'the-exicon-project.vercel.app'}`;
+    
+    console.log('Base URL for API calls:', baseUrl);
+    
     const exercisesRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/exercises?${queryParams.toString()}`
+      `${baseUrl}/api/exercises?${queryParams.toString()}`
     );
     
     const { exercises, totalCount } = await exercisesRes.json();
     
     // Fetch popular tags
     const tagsRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL || 'http://localhost:3000'}/api/tags/popular`
+      `${baseUrl}/api/tags/popular`
     );
     
     const popularTags = await tagsRes.json();
