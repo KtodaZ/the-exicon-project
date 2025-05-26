@@ -12,6 +12,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { SearchBar } from '@/components/ui/searchbar';
 import { TagList } from '@/components/ui/tag-list';
 import { ActiveFilters, FilterItem } from '@/components/ui/active-filters';
+import { searchExercises, getAllExercises, getPopularTags } from '@/lib/api/exercise';
 
 interface ExiconPageProps {
   initialExercises: ExerciseListItem[];
@@ -274,43 +275,24 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const selectedTags = Array.isArray(tags) ? tags as string[] : tags ? [tags as string] : [];
   
   try {
-    // Fetch exercises
-    const queryParams = new URLSearchParams();
-    queryParams.append('page', currentPage.toString());
-    queryParams.append('limit', '12');
+    // Directly call the database functions instead of making HTTP requests
+    let exercisesData;
     
-    if (searchQuery) {
-      queryParams.append('query', searchQuery);
+    if (searchQuery || selectedTags.length > 0) {
+      // Use search function if there's a query or tags
+      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 12);
+    } else {
+      // Use getAllExercises for the default case
+      exercisesData = await getAllExercises(currentPage, 12);
     }
     
-    selectedTags.forEach(tag => {
-      queryParams.append('tags', tag);
-    });
-    
-    // Properly construct the base URL with protocol
-    const baseUrl = process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000'
-      : `https://${process.env.VERCEL_URL || process.env.NEXT_PUBLIC_API_URL || 'the-exicon-project.vercel.app'}`;
-    
-    console.log('Base URL for API calls:', baseUrl);
-    
-    const exercisesRes = await fetch(
-      `${baseUrl}/api/exercises?${queryParams.toString()}`
-    );
-    
-    const { exercises, totalCount } = await exercisesRes.json();
-    
-    // Fetch popular tags
-    const tagsRes = await fetch(
-      `${baseUrl}/api/tags/popular`
-    );
-    
-    const popularTags = await tagsRes.json();
+    // Get popular tags
+    const popularTags = await getPopularTags();
     
     return {
       props: {
-        initialExercises: exercises,
-        totalCount,
+        initialExercises: exercisesData.exercises,
+        totalCount: exercisesData.totalCount,
         popularTags,
         initialQuery: searchQuery || '',
         initialTags: selectedTags,
