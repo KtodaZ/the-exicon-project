@@ -66,7 +66,7 @@ export default function ExiconPage({
     router.push({
       pathname: '/exicon',
       query
-    }, undefined, { shallow: true });
+    });
   }, [searchQuery, activeTags, router]);
 
   const loadExercises = useCallback(async (page: number) => {
