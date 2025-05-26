@@ -1,6 +1,8 @@
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { TagBadge } from '@/components/ui/tag-badge';
 import { Button } from '@/components/ui/button';
 import { ExerciseDetail } from '@/lib/models/exercise';
@@ -9,11 +11,45 @@ import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 
+// Custom hook to get window size
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: undefined as number | undefined,
+    height: undefined as number | undefined,
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
+    window.addEventListener("resize", handleResize);
+    handleResize();
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return windowSize;
+}
+
 interface ExerciseDetailPageProps {
   exercise: ExerciseDetail;
 }
 
 export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps) {
+  const { width } = useWindowSize();
+  
+  // Determine how many exercises to show based on screen size
+  const getExerciseCount = () => {
+    if (!width) return 8; // Default for SSR
+    if (width >= 1280) return 8; // XL: 4x2 = 8
+    if (width >= 1024) return 6; // LG: 3x2 = 6
+    return 6; // Smaller screens show 6
+  };
+
   if (!exercise) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-black flex items-center justify-center">
@@ -33,9 +69,12 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
     description, 
     text, 
     video_url, 
+    image_url,
     author, 
     similarExercises 
   } = exercise;
+
+  const exerciseCount = getExerciseCount();
 
   return (
     <>
@@ -69,9 +108,23 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               ))}
             </div>
             
-            {/* Video */}
-            <div className="bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video mb-8 flex items-center justify-center overflow-hidden">
-              <VideoPlayer src={video_url} />
+            {/* Video or Image */}
+            <div className="max-w-2xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video mb-8 flex items-center justify-center overflow-hidden shadow-lg">
+              {video_url ? (
+                <VideoPlayer src={video_url} />
+              ) : image_url ? (
+                <Image
+                  src={image_url}
+                  alt={name}
+                  className="object-cover w-full h-full"
+                  width={800}
+                  height={450}
+                />
+              ) : (
+                <div className="text-gray-400 dark:text-gray-600">
+                  No media available
+                </div>
+              )}
             </div>
             
             {/* Exercise content */}
@@ -103,7 +156,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 See Also
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {similarExercises.map(exercise => (
+                {similarExercises.slice(0, exerciseCount).map(exercise => (
                   <ExerciseCard key={exercise._id} exercise={exercise} />
                 ))}
               </div>
@@ -127,7 +180,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     console.log('Exercise fetched successfully:', exercise?.name || 'null');
     
     return {
-      props: { exercise }
+      props: { 
+        exercise: exercise ? JSON.parse(JSON.stringify(exercise)) : null 
+      }
     };
   } catch (error) {
     console.error(`Error fetching exercise with slug ${slug}:`, error);

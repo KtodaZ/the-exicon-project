@@ -291,9 +291,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     
     return {
       props: {
-        initialExercises: exercisesData.exercises,
+        initialExercises: JSON.parse(JSON.stringify(exercisesData.exercises)),
         totalCount: exercisesData.totalCount,
-        popularTags,
+        popularTags: JSON.parse(JSON.stringify(popularTags)),
         initialQuery: searchQuery || '',
         initialTags: selectedTags,
         initialPage: currentPage

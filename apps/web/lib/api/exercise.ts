@@ -168,7 +168,7 @@ function processVideoUrl(url: string): string {
 export async function getSimilarExercises(
   tags: string[],
   excludeId: string,
-  limit: number = 6
+  limit: number = 8
 ): Promise<ExerciseListItem[]> {
   const cacheKey = `similar-${excludeId}-${tags.join('-')}-${limit}`;
   const cached = cache.get(cacheKey);
