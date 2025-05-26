@@ -128,13 +128,13 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
             </div>
             
             {/* Exercise content */}
-            <div className="max-w-3xl">
+            <div className="max-w-5xl">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                 Description
               </h2>
               <div className="prose dark:prose-invert max-w-none">
-                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-lg">
-                  {text}
+                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-xl">
+                  {text?.replace(/[^\x20-\x7E]/g, ' ')}
                 </p>
               </div>
               

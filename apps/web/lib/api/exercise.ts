@@ -1,6 +1,6 @@
 import { getDatabase } from '@/lib/mongodb';
 import { Exercise, ExerciseListItem, ExerciseDetail } from '@/lib/models/exercise';
-import { cache } from '@/lib/cache';
+import { cache, cacheKeys, cacheTTL } from '@/lib/redis';
 import { ObjectId } from 'mongodb';
 
 // Utility function to safely convert string to ObjectId
@@ -20,8 +20,8 @@ export async function getAllExercises(
   page: number = 1,
   limit: number = 12
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
-  const cacheKey = `all-exercises-${page}-${limit}`;
-  const cached = cache.get(cacheKey) as { exercises: ExerciseListItem[]; totalCount: number }
+  const cacheKey = cacheKeys.allExercises(page, limit);
+  const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
   
   if (cached && cached.exercises.length > 0) {
     console.log('getAllExercises using cached result with', cached.exercises.length, 'exercises');
@@ -91,7 +91,7 @@ export async function getAllExercises(
     const totalCount = await collection.countDocuments({});
     
     const result = { exercises, totalCount };
-    cache.set(cacheKey, result);
+    await cache.set(cacheKey, result, cacheTTL.allExercises);
     
     return result;
   } catch (error) {
@@ -102,11 +102,11 @@ export async function getAllExercises(
 
 // Get single exercise by slug
 export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | null> {
-  const cacheKey = `exercise-${slug}`;
-  const cached = cache.get(cacheKey);
+  const cacheKey = cacheKeys.exerciseBySlug(slug);
+  const cached = await cache.get<ExerciseDetail>(cacheKey);
   
   if (cached) {
-    return cached as ExerciseDetail;
+    return cached;
   }
 
   console.log('getExerciseBySlug:', { slug });
@@ -128,7 +128,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
       exercise.video_url = processVideoUrl(exercise.video_url);
     }
 
-    // Get similar exercises
+    // Get similar exercises - pass string ID directly
     const similarExercises = await getSimilarExercises(exercise.tags, exercise._id);
     
     const result = {
@@ -136,7 +136,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
       similarExercises
     };
     
-    cache.set(cacheKey, result);
+    await cache.set(cacheKey, result, cacheTTL.exerciseDetail);
     
     return result;
   } catch (error) {
@@ -170,56 +170,64 @@ export async function getSimilarExercises(
   excludeId: string,
   limit: number = 8
 ): Promise<ExerciseListItem[]> {
-  const cacheKey = `similar-${excludeId}-${tags.join('-')}-${limit}`;
-  const cached = cache.get(cacheKey);
+  const cacheKey = cacheKeys.similarExercises(excludeId, tags, limit);
+  const cached = await cache.get<ExerciseListItem[]>(cacheKey);
   
   if (cached) {
-    return cached as ExerciseListItem[];
+    return cached;
   }
 
   const db = await getDatabase();
   
   console.log('Finding similar exercises for tags:', tags, 'excluding ID:', excludeId);
+  console.log('Exclude ID type:', typeof excludeId);
   
-  // First try to find exercises with exact same tags
-  let similarExercises = await db
-    .collection('exercises')
-    .find<ExerciseListItem>({
-      // Use type assertion to fix TypeScript error
-      _id: { $ne: excludeId } as any,
-      tags: { $all: tags }
-    })
-    .sort({ publishedAt: -1 })
-    .limit(limit)
-    .project({
-      _id: 1,
-      name: 1,
-      description: 1,
-      tags: 1,
-      urlSlug: 1,
-      difficulty: 1,
-      video_url: 1,
-      image_url: 1
-    })
-    .toArray();
-
-  console.log(`Found ${similarExercises.length} exercises with exact tag match`);
-  
-  // If we don't have enough matches, find exercises with at least one matching tag
-  if (similarExercises.length < limit) {
-    const remaining = limit - similarExercises.length;
-    const existingIds = similarExercises.map(ex => ex._id);
-    
-    const additionalExercises = await db
-      .collection('exercises')
-      .find<ExerciseListItem>({
-        // Use type assertion to fix TypeScript error
-        _id: { $ne: excludeId, $nin: existingIds } as any,
-        tags: { $in: tags }
-      })
-      .sort({ publishedAt: -1 })
-      .limit(remaining)
-      .project({
+  // Use aggregation pipeline to score exercises by tag similarity
+  const pipeline = [
+    {
+      // Exclude the current exercise (using string ID directly)
+      $match: {
+        _id: { $ne: excludeId }
+      }
+    },
+    {
+      // Add a field that calculates the number of matching tags
+      $addFields: {
+        matchingTagsCount: {
+          $size: {
+            $setIntersection: ['$tags', tags]
+          }
+        },
+        // Calculate similarity score (percentage of tags that match)
+        similarityScore: {
+          $divide: [
+            { $size: { $setIntersection: ['$tags', tags] } },
+            tags.length
+          ]
+        }
+      }
+    },
+    {
+      // Only include exercises that have at least one matching tag
+      $match: {
+        matchingTagsCount: { $gt: 0 }
+      }
+    },
+    {
+      // Sort by number of matching tags (descending), then by similarity score, then by publish date
+      $sort: {
+        matchingTagsCount: -1,
+        similarityScore: -1,
+        publishedAt: -1
+      }
+    },
+    {
+      // Limit results
+      $limit: limit
+    },
+    {
+      // Project only the fields we need
+      $project: {
         _id: 1,
         name: 1,
         description: 1,
@@ -227,18 +235,37 @@ export async function getSimilarExercises(
         urlSlug: 1,
         difficulty: 1,
         video_url: 1,
-        image_url: 1
-      })
-      .toArray();
-    
-    console.log(`Found ${additionalExercises.length} additional exercises with partial tag match`);
-    
-    similarExercises = [...similarExercises, ...additionalExercises];
+        image_url: 1,
+        matchingTagsCount: 1,
+        similarityScore: 1
+      }
+    }
+  ];
+  
+  const similarExercises = await db
+    .collection('exercises')
+    .aggregate(pipeline)
+    .toArray() as (ExerciseListItem & { matchingTagsCount: number; similarityScore: number })[];
+  
+  console.log(`Found ${similarExercises.length} similar exercises with tag scoring:`);
+  similarExercises.forEach((exercise, index) => {
+    console.log(`  ${index + 1}. ${exercise.name} - ${exercise.matchingTagsCount}/${tags.length} tags (${Math.round(exercise.similarityScore * 100)}% similarity) - ID: ${exercise._id}`);
+  });
+  
+  // Check if the current exercise is in the results (it shouldn't be)
+  const currentExerciseInResults = similarExercises.find(ex => ex._id === excludeId);
+  if (currentExerciseInResults) {
+    console.warn('WARNING: Current exercise found in similar results!', currentExerciseInResults.name);
+  } else {
+    console.log('✓ Current exercise successfully excluded from results');
   }
   
-  cache.set(cacheKey, similarExercises);
+  // Remove the scoring fields before returning
+  const cleanedExercises = similarExercises.map(({ matchingTagsCount, similarityScore, ...exercise }) => exercise);
   
-  return similarExercises as ExerciseListItem[];
+  await cache.set(cacheKey, cleanedExercises, cacheTTL.similarExercises);
+  
+  return cleanedExercises as ExerciseListItem[];
 }
 
 // Search exercises by query and optional tags
@@ -248,13 +275,13 @@ export async function searchExercises(
   page: number = 1,
   limit: number = 12
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
-  const cacheKey = `search-${query}-${tags.join('-')}-${page}-${limit}`;
-  const cached = cache.get(cacheKey);
+  const cacheKey = cacheKeys.searchExercises(query, tags, page, limit);
+  const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
   
   if (cached) {
     console.log('searchExercises using cached result with', 
-      (cached as any).exercises?.length || 0, 'exercises');
-    return cached as { exercises: ExerciseListItem[]; totalCount: number };
+      cached.exercises?.length || 0, 'exercises');
+    return cached;
   }
 
   console.log('searchExercises MongoDB connection starting...');
@@ -358,7 +385,7 @@ export async function searchExercises(
     });
     
     const result = { exercises, totalCount };
-    cache.set(cacheKey, result);
+    await cache.set(cacheKey, result, cacheTTL.searchResults);
     
     return result;
   } catch (error) {
@@ -369,11 +396,11 @@ export async function searchExercises(
 
 // Get popular tags
 export async function getPopularTags(limit: number = 10): Promise<{ tag: string; count: number }[]> {
-  const cacheKey = `popular-tags-${limit}`;
-  const cached = cache.get(cacheKey);
+  const cacheKey = cacheKeys.popularTags();
+  const cached = await cache.get<{ tag: string; count: number }[]>(cacheKey);
   
   if (cached) {
-    return cached as { tag: string; count: number }[];
+    return cached;
   }
 
   const db = await getDatabase();
@@ -391,7 +418,7 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
     .aggregate(pipeline)
     .toArray() as { tag: string; count: number }[];
   
-  cache.set(cacheKey, result);
+  await cache.set(cacheKey, result, cacheTTL.popularTags);
   
   return result;
 }

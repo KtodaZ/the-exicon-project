@@ -28,6 +28,15 @@ const config = convict({
       default: 'Cluster0',
       env: 'MONGODB_DATABASE'
     }
+  },
+  redis: {
+    url: {
+      doc: 'Redis connection URL',
+      format: String,
+      default: '',
+      env: 'REDIS_URL',
+      sensitive: true
+    }
   }
 });
 
