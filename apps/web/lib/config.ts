@@ -1,8 +1,10 @@
 import convict from 'convict';
-import dotenv from 'dotenv';
 
-// Load environment variables from .env file
-dotenv.config();
+// Only load dotenv in development (Vercel injects env vars directly)
+if (process.env.NODE_ENV === 'development') {
+  const dotenv = require('dotenv');
+  dotenv.config();
+}
 
 // Define the configuration schema
 const config = convict({
@@ -23,13 +25,21 @@ const config = convict({
     database: {
       doc: 'MongoDB database name',
       format: String,
-      default: 'Cluster0',
+      default: 'exicon',
       env: 'MONGODB_DATABASE'
     }
   }
 });
 
-// Validate the configuration
-config.validate({ allowed: 'strict' });
+// Perform validation but don't use strict mode to allow for missing optional vars
+try {
+  config.validate({ allowed: 'warn' });
+} catch (error) {
+  console.error('Configuration validation error:', error);
+  // In production, we might want to continue with warnings rather than failing
+  if (process.env.NODE_ENV !== 'production') {
+    throw error;
+  }
+}
 
 export default config; 

@@ -2,8 +2,17 @@ import { MongoClient } from 'mongodb';
 import config from './config';
 
 const uri = config.get('mongodb.uri');
+const databaseName = config.get('mongodb.database');
+
+console.log('MongoDB configuration:', {
+  hasUri: !!uri,
+  databaseName,
+  nodeEnv: process.env.NODE_ENV
+});
+
 if (!uri) {
   console.error('MONGODB_URI is not defined in environment variables');
+  console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('MONGO')));
 }
 
 const options = {
@@ -56,6 +65,15 @@ export default clientPromise;
 
 // Export a helper function to get the configured database
 export const getDatabase = async () => {
-  const client = await clientPromise;
-  return client.db(config.get('mongodb.database'));
+  try {
+    const client = await clientPromise;
+    const db = client.db(databaseName);
+    console.log('Successfully connected to database:', db.databaseName);
+    return db;
+  } catch (error) {
+    console.error('Error getting database:', error);
+    console.error('MongoDB URI exists:', !!uri);
+    console.error('Database name:', databaseName);
+    throw error;
+  }
 };
