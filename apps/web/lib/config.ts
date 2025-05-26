@@ -25,7 +25,7 @@ const config = convict({
     database: {
       doc: 'MongoDB database name',
       format: String,
-      default: 'exicon',
+      default: 'Cluster0',
       env: 'MONGODB_DATABASE'
     }
   }
