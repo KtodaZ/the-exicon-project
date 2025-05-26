@@ -7,6 +7,7 @@ import { ExerciseDetail } from '@/lib/models/exercise';
 import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
+import { getExerciseBySlug } from '@/lib/api/exercise';
 
 interface ExerciseDetailPageProps {
   exercise: ExerciseDetail;
@@ -120,28 +121,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   console.log('getServerSideProps called with slug:', slug);
   
   try {
-    // Properly construct the base URL with protocol
-    const baseUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000' 
-      : `https://${process.env.VERCEL_URL || process.env.NEXT_PUBLIC_API_URL || 'the-exicon-project.vercel.app'}`;
+    // Directly call the database function instead of making an HTTP request
+    const exercise = await getExerciseBySlug(slug);
     
-    const apiUrl = `${baseUrl}/api/exercises/${slug}`;
-    console.log('Fetching from URL:', apiUrl);
-    
-    const res = await fetch(apiUrl);
-    
-    console.log('Response status:', res.status);
-    console.log('Response ok:', res.ok);
-    
-    if (!res.ok) {
-      console.log('Response not ok, returning null exercise');
-      return {
-        props: { exercise: null }
-      };
-    }
-    
-    const exercise = await res.json();
-    console.log('Exercise fetched successfully:', exercise?.name);
+    console.log('Exercise fetched successfully:', exercise?.name || 'null');
     
     return {
       props: { exercise }
