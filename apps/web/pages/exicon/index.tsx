@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { Button, buttonVariants, type ButtonProps } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ExerciseCard } from '@/components/exercise-card';
@@ -13,6 +14,7 @@ import { SearchBar } from '@/components/ui/searchbar';
 import { TagList } from '@/components/ui/tag-list';
 import { ActiveFilters, FilterItem } from '@/components/ui/active-filters';
 import { searchExercises, getAllExercises, getPopularTags } from '@/lib/api/exercise';
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
 interface ExiconPageProps {
   initialExercises: ExerciseListItem[];
@@ -23,6 +25,31 @@ interface ExiconPageProps {
   initialPage: number;
 }
 
+// Fetch function for TanStack Query
+const fetchExercises = async ({ pageParam = 1, queryKey }: any) => {
+  const [, searchQuery, activeTags] = queryKey;
+  const queryParams = new URLSearchParams();
+  queryParams.append('page', pageParam.toString());
+  queryParams.append('limit', '12');
+  
+  if (searchQuery) {
+    queryParams.append('query', searchQuery);
+  }
+  
+  if (activeTags?.length > 0) {
+    activeTags.forEach((tag: string) => {
+      queryParams.append('tags', tag);
+    });
+  }
+  
+  const response = await fetch(`/api/exercises?${queryParams.toString()}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch exercises');
+  }
+  
+  return response.json();
+};
+
 export default function ExiconPage({
   initialExercises,
   totalCount,
@@ -32,112 +59,95 @@ export default function ExiconPage({
   initialPage
 }: ExiconPageProps) {
   const router = useRouter();
-  const [exercises, setExercises] = useState<ExerciseListItem[]>(initialExercises);
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [activeTags, setActiveTags] = useState<string[]>(initialTags);
-  const [currentPage, setCurrentPage] = useState(initialPage);
-  const [hasMore, setHasMore] = useState(initialExercises.length < totalCount);
-  const [currentTotalCount, setCurrentTotalCount] = useState(totalCount);
-  const exercisesPerPage = 12;
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastExerciseElementRef = useRef<HTMLDivElement | null>(null);
 
-  // Reset exercises when filters change
-  useEffect(() => {
-    if (currentPage === 1) {
-      setExercises(initialExercises);
-      setHasMore(initialExercises.length < totalCount);
-    }
-  }, [initialExercises, totalCount, currentPage]);
+  // Store the truly initial data from SSR in refs to keep it stable for useInfiniteQuery's initialData
+  const initialExercisesRef = useRef(initialExercises);
+  const initialTotalCountRef = useRef(totalCount);
+  const initialPageRef = useRef(initialPage);
 
   // Update URL when filters change
   useEffect(() => {
-    const query: any = {};
-    
-    if (searchQuery) {
-      query.query = searchQuery;
+    // Only run if router is ready and we are on the /exicon page.
+    // This check helps prevent premature execution or execution on other pages if this component were reused.
+    if (!router.isReady || router.pathname !== '/exicon') {
+      return;
     }
-    
-    if (activeTags.length > 0) {
-      query.tags = activeTags;
-    }
-    
-    router.push({
-      pathname: '/exicon',
-      query
-    });
-  }, [searchQuery, activeTags, router]);
 
-  const loadExercises = useCallback(async (page: number) => {
-    setLoading(true);
-    
-    try {
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', page.toString());
-      queryParams.append('limit', exercisesPerPage.toString());
-      
-      if (searchQuery) {
-        queryParams.append('query', searchQuery);
-      }
-      
-      activeTags.forEach(tag => {
-        queryParams.append('tags', tag);
-      });
-      
-      const response = await fetch(`/api/exercises?${queryParams.toString()}`);
-      const data = await response.json();
-      
-      if (page === 1) {
-        setExercises(data.exercises);
-        setCurrentTotalCount(data.totalCount);
-        setHasMore(data.exercises.length < data.totalCount);
-      } else {
-        setExercises(prev => {
-          const newExercises = [...prev, ...data.exercises];
-          setHasMore(newExercises.length < data.totalCount);
-          return newExercises;
-        });
-      }
-    } catch (error) {
-      console.error('Error loading exercises:', error);
-    } finally {
-      setLoading(false);
+    const newPushQuery: any = {};
+    if (searchQuery) { // searchQuery is component state
+      newPushQuery.query = searchQuery;
     }
-  }, [searchQuery, activeTags, exercisesPerPage]);
+    if (activeTags && activeTags.length > 0) { // activeTags is component state
+      newPushQuery.tags = activeTags;
+    }
 
-  // Trigger search when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-    loadExercises(1);
-  }, [loadExercises]);
-
-  // Setup intersection observer for infinite scroll
-  const lastExerciseRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
-    
-    if (observer.current) {
-      observer.current.disconnect();
+    // Normalize current relevant query params from router.query for comparison
+    const currentRouterQueryNormalized: any = {};
+    if (router.query.query && typeof router.query.query === 'string') {
+      currentRouterQueryNormalized.query = router.query.query;
     }
     
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        setCurrentPage(prevPage => prevPage + 1);
-        loadExercises(currentPage + 1);
-      }
-    });
-    
-    if (node) {
-      observer.current.observe(node);
-      lastExerciseElementRef.current = node;
+    let currentRouterTagsSorted: string[] = [];
+    if (router.query.tags) {
+      const tagsArray = Array.isArray(router.query.tags) 
+        ? router.query.tags 
+        : [router.query.tags as string];
+      // Ensure tags are strings and filter out empty ones, then sort for comparison
+      currentRouterTagsSorted = tagsArray
+        .filter(tag => typeof tag === 'string' && tag.length > 0)
+        .sort();
     }
-  }, [loading, hasMore, currentPage]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    loadExercises(1);
-  };
+    const newPushQueryString = newPushQuery.query || "";
+    const currentRouterQueryString = currentRouterQueryNormalized.query || "";
+
+    const newPushQueryTagsSorted = newPushQuery.tags ? [...newPushQuery.tags].sort() : [];
+
+    // Check if the new query would be identical to the current one
+    const isIdentical =
+      newPushQueryString === currentRouterQueryString &&
+      newPushQueryTagsSorted.length === currentRouterTagsSorted.length &&
+      newPushQueryTagsSorted.every((tag, index) => tag === currentRouterTagsSorted[index]);
+
+    if (!isIdentical) {
+      // TEMPORARILY COMMENTING OUT ROUTER.PUSH FOR DIAGNOSTICS
+      /*
+      router.push(
+        {
+          pathname: '/exicon',
+          query: newPushQuery,
+        },
+        undefined, // \`as\` parameter
+        { shallow: false } // Explicitly use default behavior (runs GSSP)
+      );
+      */
+    }
+  }, [searchQuery, activeTags, router.isReady, router.pathname, router.query]);
+
+  // Use the custom infinite scroll hook
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    isFetchingNextPage,
+    hasNextPage,
+    loadMoreRef,
+  } = useInfiniteScroll<ExerciseListItem>({
+    queryKey: ['exercises', searchQuery, activeTags],
+    fetchFn: fetchExercises,
+    initialData: {
+      pages: [{ exercises: initialExercisesRef.current, totalCount: initialTotalCountRef.current }],
+      pageParams: [initialPageRef.current],
+    },
+    initialPageParam: initialPageRef.current,
+  });
+
+  // Flatten all exercises from all pages
+  const exercises = data?.pages.flatMap((page: { exercises: ExerciseListItem[]; totalCount: number }) => page.exercises) ?? [];
+  const currentTotalCount = data?.pages[0]?.totalCount ?? totalCount;
 
   const toggleTag = (tag: string) => {
     setActiveTags(prev => 
@@ -151,6 +161,22 @@ export default function ExiconPage({
     setSearchQuery('');
     setActiveTags([]);
   };
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-black flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Error loading exercises</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {error instanceof Error ? error.message : 'Something went wrong'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -223,11 +249,8 @@ export default function ExiconPage({
             {exercises.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-                  {exercises.map((exercise, index) => (
-                    <div 
-                      key={exercise._id} 
-                      ref={index === exercises.length - 1 ? lastExerciseRef : null}
-                    >
+                  {exercises.map((exercise: ExerciseListItem) => (
+                    <div key={exercise._id}>
                       <ExerciseCard
                         exercise={exercise}
                         onTagClick={toggleTag}
@@ -236,13 +259,29 @@ export default function ExiconPage({
                   ))}
                 </div>
 
-                {/* Loading indicator */}
-                {loading && (
-                  <div className="flex justify-center items-center py-8">
-                    <Spinner variant="red" />
-                    <span className="ml-2 text-gray-600 dark:text-gray-400">Loading more exercises...</span>
-                  </div>
-                )}
+                {/* Load more trigger element */}
+                <div 
+                  ref={loadMoreRef}
+                  className="flex justify-center items-center py-8"
+                  style={{ minHeight: '100px' }} // Ensure the element has visible height
+                >
+                  {isFetchingNextPage ? (
+                    <>
+                      <Spinner variant="red" />
+                      <span className="ml-2 text-gray-600 dark:text-gray-400">
+                        Loading more exercises...
+                      </span>
+                    </>
+                  ) : hasNextPage ? (
+                    <div className="text-gray-600 dark:text-gray-400">
+                      Scroll for more...
+                    </div>
+                  ) : (
+                    <div className="text-gray-600 dark:text-gray-400">
+                      No more exercises to load
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-8 text-center">
