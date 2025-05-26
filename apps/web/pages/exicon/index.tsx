@@ -127,6 +127,11 @@ export default function ExiconPage({
   }, [searchQuery, activeTags, router.isReady, router.pathname, router.query]);
 
   // Use the custom infinite scroll hook
+  // Only use initialData if current query matches the SSR initial query
+  const isInitialQuery = searchQuery === initialQuery && 
+    activeTags.length === initialTags.length &&
+    activeTags.every(tag => initialTags.includes(tag));
+
   const {
     data,
     isLoading,
@@ -138,11 +143,11 @@ export default function ExiconPage({
   } = useInfiniteScroll<ExerciseListItem>({
     queryKey: ['exercises', searchQuery, activeTags],
     fetchFn: fetchExercises,
-    initialData: {
+    initialData: isInitialQuery ? {
       pages: [{ exercises: initialExercisesRef.current, totalCount: initialTotalCountRef.current }],
       pageParams: [initialPageRef.current],
-    },
-    initialPageParam: initialPageRef.current,
+    } : undefined,
+    initialPageParam: 1, // Always start from page 1 for new queries
   });
 
   // Flatten all exercises from all pages

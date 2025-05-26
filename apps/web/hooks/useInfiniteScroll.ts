@@ -9,7 +9,7 @@ interface PageData<T> {
 interface UseInfiniteScrollOptions<T> {
   queryKey: any[];
   fetchFn: ({ pageParam, queryKey }: { pageParam: number; queryKey: any[] }) => Promise<PageData<T>>;
-  initialData: {
+  initialData?: {
     pages: PageData<T>[];
     pageParams: number[];
   };
@@ -32,7 +32,7 @@ export function useInfiniteScroll<T>({
       const totalLoaded = allPages.reduce((acc, page) => acc + page.exercises.length, 0);
       return totalLoaded < lastPage.totalCount ? allPages.length + 1 : undefined;
     },
-    initialData,
+    ...(initialData && { initialData }),
   });
 
   const { fetchNextPage, hasNextPage, isFetchingNextPage } = infiniteQuery;
