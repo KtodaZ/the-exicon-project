@@ -39,7 +39,8 @@ export function ActiveFilters({
         {showClearAll && onClearAll && (
           <Button
             onClick={onClearAll}
-            className="h-8 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-accent hover:text-accent-foreground"
+            variant="ghost"
+            className="h-8 px-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X className="h-4 w-4 mr-1" />
             Clear all

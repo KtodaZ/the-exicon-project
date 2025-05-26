@@ -90,16 +90,13 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
         </div>
       </Link>
       <CardFooter className="flex flex-wrap gap-2 pt-0">
-        {tags.slice(0, 5).map((tag) => (
+        {tags.map((tag) => (
           <TagBadge
             key={tag}
             tag={tag}
             onClick={onTagClick ? (e) => handleTagClick(tag, e) : undefined}
           />
         ))}
-        {tags.length > 5 && (
-          <span className="text-xs text-gray-500">+{tags.length - 5} more</span>
-        )}
       </CardFooter>
     </Card>
   );

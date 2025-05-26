@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { titleCase } from "@/lib/utils";
 
 export interface TagBadgeProps {
   tag: string;
@@ -30,7 +31,7 @@ export function TagBadge({
       )}
       onClick={onClick}
     >
-      {tag}
+      {titleCase(tag)}
     </Badge>
   );
 

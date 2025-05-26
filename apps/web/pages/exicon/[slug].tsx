@@ -133,7 +133,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 Description
               </h2>
               <div className="prose dark:prose-invert max-w-none">
-                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line">
+                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-lg">
                   {text}
                 </p>
               </div>
