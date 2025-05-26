@@ -1,18 +1,47 @@
 import { MongoClient } from 'mongodb';
 import { faker } from '@faker-js/faker';
 import dotenv from 'dotenv';
+import convict from 'convict';
 
 dotenv.config();
 
+// Define the configuration schema (inline since we can't import from TypeScript)
+const config = convict({
+  env: {
+    doc: 'The application environment.',
+    format: ['production', 'development', 'test'],
+    default: 'development',
+    env: 'NODE_ENV'
+  },
+  mongodb: {
+    uri: {
+      doc: 'MongoDB connection URI',
+      format: String,
+      default: '',
+      env: 'MONGODB_URI',
+      sensitive: true
+    },
+    database: {
+      doc: 'MongoDB database name',
+      format: String,
+      default: 'exicon',
+      env: 'MONGODB_DATABASE'
+    }
+  }
+});
+
+// Validate the configuration
+config.validate({ allowed: 'strict' });
+
 const setup = async () => {
   // Skip database setup in production environments
-  if (process.env.NODE_ENV === 'production') {
+  if (config.get('env') === 'production') {
     console.log('Skipping database setup in production environment');
     return;
   }
   
   // Check for MongoDB URI
-  if (!process.env.MONGODB_URI) {
+  if (!config.get('mongodb.uri')) {
     console.warn('MONGODB_URI not found in environment variables. Skipping database setup.');
     return;
   }
@@ -20,11 +49,11 @@ const setup = async () => {
   let client;
 
   try {
-    client = new MongoClient(process.env.MONGODB_URI);
+    client = new MongoClient(config.get('mongodb.uri'));
     await client.connect();
 
     const hasData = await client
-      .db('test')
+      .db(config.get('mongodb.database'))
       .collection('users')
       .countDocuments();
 
@@ -52,7 +81,7 @@ const setup = async () => {
     });
 
     const insert = await client
-      .db('test')
+      .db(config.get('mongodb.database'))
       .collection('users')
       .insertMany(records);
 

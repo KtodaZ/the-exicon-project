@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '@/lib/mongodb';
+import { getDatabase } from '@/lib/mongodb';
 
 type Data = {
   status: string;
@@ -15,8 +15,7 @@ export default async function handler(
   
   try {
     // Test MongoDB connection
-    const client = await clientPromise;
-    const db = client.db("test");
+    const db = await getDatabase();
     await db.command({ ping: 1 });
     mongoConnected = true;
   } catch (error) {

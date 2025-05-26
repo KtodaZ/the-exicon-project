@@ -1,6 +1,7 @@
 import { MongoClient } from 'mongodb';
+import config from './config';
 
-const uri = process.env.MONGODB_URI as string;
+const uri = config.get('mongodb.uri');
 if (!uri) {
   console.error('MONGODB_URI is not defined in environment variables');
 }
@@ -52,3 +53,9 @@ if (process.env.NODE_ENV === 'development') {
 // Export a module-scoped MongoClient promise. By doing this in a
 // separate module, the client can be shared across functions.
 export default clientPromise;
+
+// Export a helper function to get the configured database
+export const getDatabase = async () => {
+  const client = await clientPromise;
+  return client.db(config.get('mongodb.database'));
+};

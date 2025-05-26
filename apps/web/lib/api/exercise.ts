@@ -1,4 +1,4 @@
-import clientPromise from '@/lib/mongodb';
+import { getDatabase } from '@/lib/mongodb';
 import { Exercise, ExerciseListItem, ExerciseDetail } from '@/lib/models/exercise';
 import { cache } from '@/lib/cache';
 import { ObjectId } from 'mongodb';
@@ -29,8 +29,7 @@ export async function getAllExercises(
   }
 
   console.log('MongoDB connection starting for getAllExercises...');
-  const client = await clientPromise;
-  const db = client.db();
+  const db = await getDatabase();
   console.log('Connected to database:', db.databaseName);
   const collection = db.collection('exercises');
   console.log('Using collection:', collection.collectionName);
@@ -111,8 +110,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
   }
 
   console.log('getExerciseBySlug:', { slug });
-  const client = await clientPromise;
-  const db = client.db();
+  const db = await getDatabase();
   
   try {
     const exercise = await db
@@ -179,8 +177,7 @@ export async function getSimilarExercises(
     return cached as ExerciseListItem[];
   }
 
-  const client = await clientPromise;
-  const db = client.db();
+  const db = await getDatabase();
   
   console.log('Finding similar exercises for tags:', tags, 'excluding ID:', excludeId);
   
@@ -261,8 +258,7 @@ export async function searchExercises(
   }
 
   console.log('searchExercises MongoDB connection starting...');
-  const client = await clientPromise;
-  const db = client.db();
+  const db = await getDatabase();
   console.log('searchExercises connected to database:', db.databaseName);
   
   const skip = (page - 1) * limit;
@@ -380,8 +376,7 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
     return cached as { tag: string; count: number }[];
   }
 
-  const client = await clientPromise;
-  const db = client.db();
+  const db = await getDatabase();
   
   const pipeline = [
     { $unwind: '$tags' },
@@ -404,8 +399,7 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
 // Add diagnostic function
 export async function checkExerciseCollection(): Promise<{ exists: boolean; count: number; sample?: any }> {
   try {
-    const client = await clientPromise;
-    const db = client.db();
+    const db = await getDatabase();
     
     // Check if collection exists
     const collections = await db.listCollections({ name: 'exercises' }).toArray();
