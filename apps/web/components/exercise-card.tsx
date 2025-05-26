@@ -48,7 +48,7 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
         onClick={handleAnchorClick}
         className="cursor-pointer block hover:no-underline"
         style={{ pointerEvents: 'auto' }}
-        target="_blank"
+        target="_blank" rel="noreferrer"
       >
         <CardHeader className="pb-3">
           <CardTitle className="text-xl font-bold line-clamp-2">{name}</CardTitle>
