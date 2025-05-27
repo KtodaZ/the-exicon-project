@@ -89,7 +89,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
       </Head>
 
       <div className="min-h-screen bg-gray-100 dark:bg-black">
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto py-8">
           {/* Back button */}
           <Link href="/exicon" className="inline-flex items-center mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">
             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -97,13 +97,13 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
           </Link>
 
           {/* Exercise header */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="mb-8 pt-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
               {name}
             </h1>
             
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="flex flex-wrap gap-2 mb-12">
               {tags.map(tag => (
                 <TagBadge
                   key={tag}
@@ -112,35 +112,40 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 />
               ))}
             </div>
-            
-            {/* Video or Image */}
-            <div className="max-w-2xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video mb-8 flex items-center justify-center overflow-hidden shadow-lg">
-              {video_url ? (
-                <VideoPlayer src={video_url} posterImage={image_url || undefined} />
-              ) : isPlaceholderImage ? (
-                <ExercisePlaceholderLarge title={name} tags={tags} />
-              ) : image_url ? (
-                <Image
-                  src={image_url}
-                  alt={name}
-                  className="object-cover w-full h-full"
-                  width={800}
-                  height={450}
-                />
-              ) : (
-                <div className="text-gray-400 dark:text-gray-600">
-                  No media available
-                </div>
-              )}
+          </div>
+
+          {/* Two-column layout on large screens, stacked on mobile */}
+          <div className="grid lg:grid-cols-2 lg:gap-12 gap-8 mb-12">
+            {/* Left column: Media */}
+            <div className="lg:order-1">
+              <div className="max-w-[800px] mx-auto bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video flex items-center justify-center overflow-hidden shadow-lg">
+                {video_url ? (
+                  <VideoPlayer src={video_url} posterImage={image_url || undefined} />
+                ) : isPlaceholderImage ? (
+                  <ExercisePlaceholderLarge title={name} tags={tags} />
+                ) : image_url ? (
+                  <Image
+                    src={image_url}
+                    alt={name}
+                    className="object-cover w-full h-full"
+                    width={800}
+                    height={450}
+                  />
+                ) : (
+                  <div className="text-gray-400 dark:text-gray-600">
+                    No media available
+                  </div>
+                )}
+              </div>
             </div>
             
-            {/* Exercise content */}
-            <div className="max-w-5xl">
+            {/* Right column: Content and meta */}
+            <div className="lg:order-2">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                 Description
               </h2>
-              <div className="prose dark:prose-invert max-w-none">
-                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-xl">
+              <div className="prose dark:prose-invert max-w-[65ch]">
+                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-lg leading-relaxed">
                   {text?.replace(/[^\x20-\x7E]/g, ' ')}
                 </p>
               </div>
@@ -162,7 +167,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">
                 See Also
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8">
                 {similarExercises.slice(0, exerciseCount).map(exercise => (
                   <ExerciseCard key={exercise._id} exercise={exercise} />
                 ))}

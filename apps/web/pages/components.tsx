@@ -208,6 +208,91 @@ export default function ComponentsPage() {
         </div>
       </section>
 
+      <section className="space-y-6">
+        <h2 className="text-2xl font-bold">Font Families</h2>
+        
+        <div className="space-y-6">
+          {/* Inter Font (Default) */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Inter (Default Body Font)</h3>
+            <div className="space-y-2">
+              <p className="text-xs">Inter 12px - The quick brown fox jumps over the lazy dog</p>
+              <p className="text-sm">Inter 14px - The quick brown fox jumps over the lazy dog</p>
+              <p className="text-base">Inter 16px - The quick brown fox jumps over the lazy dog</p>
+              <p className="text-lg">Inter 18px - The quick brown fox jumps over the lazy dog</p>
+              <p className="text-xl">Inter 20px - The quick brown fox jumps over the lazy dog</p>
+              <p className="text-2xl">Inter 24px - The quick brown fox jumps over the lazy dog</p>
+            </div>
+            <div className="flex gap-4 text-base">
+              <span className="font-light">Light</span>
+              <span className="font-normal">Normal</span>
+              <span className="font-medium">Medium</span>
+              <span className="font-semibold">Semibold</span>
+              <span className="font-bold">Bold</span>
+              <span className="font-black">Black</span>
+            </div>
+          </div>
+
+          {/* Barlow Semi Condensed Font (Headings) */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Barlow Semi Condensed (Headings)</h3>
+            <div className="space-y-2">
+              <h1 className="font-barlow text-4xl font-semibold">Heading 1 - The Exicon Project</h1>
+              <h2 className="font-barlow text-3xl font-medium">Heading 2 - Exercise Collection</h2>
+              <h3 className="font-barlow text-2xl font-normal">Heading 3 - Workout Components</h3>
+              <h4 className="font-barlow text-xl font-normal">Heading 4 - Training Methods</h4>
+              <h5 className="font-barlow text-lg font-normal">Heading 5 - Exercise Types</h5>
+              <h6 className="font-barlow text-base font-normal">Heading 6 - Details</h6>
+            </div>
+            <div className="flex gap-4 font-barlow text-base">
+              <span className="font-light">Light</span>
+              <span className="font-normal">Normal</span>
+              <span className="font-medium">Medium</span>
+              <span className="font-semibold">Semibold</span>
+              <span className="font-bold">Bold</span>
+              <span className="font-black">Black</span>
+            </div>
+          </div>
+
+          {/* Bayon Font */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Bayon (Brand/Logo)</h3>
+            <div className="space-y-2">
+              <p className="font-bayon text-sm">Bayon 14px - The Exicon Project</p>
+              <p className="font-bayon text-base">Bayon 16px - The Exicon Project</p>
+              <p className="font-bayon text-lg">Bayon 18px - The Exicon Project</p>
+              <p className="font-bayon text-xl">Bayon 20px - The Exicon Project</p>
+              <p className="font-bayon text-2xl">Bayon 24px - The Exicon Project</p>
+              <p className="font-bayon text-3xl">Bayon 30px - The Exicon Project</p>
+            </div>
+          </div>
+
+          {/* Anton Font */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Anton (Display/Impact)</h3>
+            <div className="space-y-2">
+              <p className="font-anton text-base">Anton 16px - NAVY SEAL BURPEE</p>
+              <p className="font-anton text-lg">Anton 18px - NAVY SEAL BURPEE</p>
+              <p className="font-anton text-xl">Anton 20px - NAVY SEAL BURPEE</p>
+              <p className="font-anton text-2xl">Anton 24px - NAVY SEAL BURPEE</p>
+              <p className="font-anton text-3xl">Anton 30px - NAVY SEAL BURPEE</p>
+              <p className="font-anton text-4xl">Anton 36px - NAVY SEAL BURPEE</p>
+            </div>
+          </div>
+
+          {/* Mono Font */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-medium">Mono (Code/Technical)</h3>
+            <div className="space-y-2">
+              <p className="font-mono text-xs">font-mono 12px - console.log(&apos;Hello World&apos;)</p>
+              <p className="font-mono text-sm">font-mono 14px - const exercise = &apos;burpee&apos;</p>
+              <p className="font-mono text-base">font-mono 16px - function workout() &#123; return true; &#125;</p>
+              <p className="font-mono text-lg">font-mono 18px - git commit -m &quot;Add fonts demo&quot;</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="space-y-4">
         <h2 className="text-2xl font-bold">Active Filters</h2>
         <ActiveFilters

@@ -50,13 +50,13 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
       <Link href={`/exicon/${urlSlug}`} onClick={handleCardClick}>
         <div className="cursor-pointer">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xl font-bold line-clamp-2">{name}</CardTitle>
-            <p className={cn("text-sm font-medium", difficultyInfo.className)}>
+            <CardTitle className="text-xl font-bold line-clamp-2 mb-4">{name}</CardTitle>
+            <p className={cn("text-sm font-medium mb-3", difficultyInfo.className)}>
               {difficultyInfo.text}
             </p>
           </CardHeader>
           <CardContent className="pb-4">
-            <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center overflow-hidden">
+            <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-5 flex items-center justify-center overflow-hidden">
               {isPlaceholderImage ? (
                 <ExercisePlaceholder title={name} tags={tags} />
               ) : image_url ? (

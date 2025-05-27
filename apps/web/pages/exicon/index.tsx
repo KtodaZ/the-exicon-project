@@ -191,9 +191,9 @@ export default function ExiconPage({
       </Head>
 
       <div className="min-h-screen bg-gray-100 dark:bg-black">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="container mx-auto py-8">
+          <div className="mb-8 pt-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
               Exercise Directory
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
@@ -201,62 +201,67 @@ export default function ExiconPage({
             </p>
           </div>
 
-          {/* Search and filters */}
-          <div className="mb-8 space-y-6">
-            <SearchBar
-              placeholder="Search exercises..."
-              defaultValue={searchQuery}
-              onSearch={(value) => {
-                setSearchQuery(value);
-              }}
-              className="max-w-md"
-            />
-
-            {/* Popular tags */}
-            <div>
-              <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
-                Popular Tags
-              </h2>
-              <TagList 
-                tags={popularTags}
-                activeTags={activeTags}
-                onTagClick={toggleTag}
-                showCounts={false}
-                initialDisplayCount={20}
-                showViewMore={true}
-              />
-            </div>
-
-            {/* Active filters */}
-            {(activeTags.length > 0 || searchQuery) && (
-              <ActiveFilters
-                filters={[
-                  ...(searchQuery ? [{ type: 'Search', value: searchQuery }] : []),
-                  ...activeTags.map(tag => ({ type: 'Tag', value: tag }))
-                ]}
-                onRemove={(filter) => {
-                  if (filter.type === 'Search') {
-                    setSearchQuery('');
-                  } else if (filter.type === 'Tag') {
-                    toggleTag(filter.value);
-                  }
+          {/* Sticky utility bar with search and filters */}
+          <div className="sticky top-0 z-10 bg-gray-100/95 dark:bg-black/95 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800 -mx-4 px-4 py-4 mb-6 shadow-sm">
+            <div className="space-y-4">
+              <SearchBar
+                placeholder="Search exercises..."
+                defaultValue={searchQuery}
+                onSearch={(value) => {
+                  setSearchQuery(value);
                 }}
-                onClearAll={clearFilters}
+                className="max-w-md"
               />
-            )}
+
+              {/* Popular tags */}
+              <div>
+                <h2 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Popular Tags
+                </h2>
+                <TagList 
+                  tags={popularTags}
+                  activeTags={activeTags}
+                  onTagClick={toggleTag}
+                  showCounts={false}
+                  initialDisplayCount={20}
+                  showViewMore={true}
+                />
+              </div>
+
+              {/* Active filters */}
+              {(activeTags.length > 0 || searchQuery) && (
+                <ActiveFilters
+                  filters={[
+                    ...(searchQuery ? [{ type: 'Search', value: searchQuery }] : []),
+                    ...activeTags.map(tag => ({ type: 'Tag', value: tag }))
+                  ]}
+                  onRemove={(filter) => {
+                    if (filter.type === 'Search') {
+                      setSearchQuery('');
+                    } else if (filter.type === 'Tag') {
+                      toggleTag(filter.value);
+                    }
+                  }}
+                  onClearAll={clearFilters}
+                />
+              )}
+            </div>
           </div>
 
-          {/* Results */}
+          {/* Results section */}
           <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {`${currentTotalCount} Exercises`}
+                Exercises
               </h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {`${currentTotalCount} found`}
+              </span>
             </div>
 
             {exercises.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 mb-8">
                   {exercises.map((exercise: ExerciseListItem) => (
                     <div key={exercise._id}>
                       <ExerciseCard

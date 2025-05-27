@@ -68,6 +68,7 @@ module.exports = {
         sans: ["Inter", "var(--font-sans)", ...fontFamily.sans],
         anton: ["Anton", "sans-serif"],
         bayon: ["Bayon", "sans-serif"],
+        barlow: ["Barlow Semi Condensed", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

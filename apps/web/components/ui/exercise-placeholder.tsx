@@ -40,7 +40,7 @@ export function ExercisePlaceholder({ title, tags = [], className }: ExercisePla
       </div>
 
       {/* Tag image overlay - right half */}
-      <div className="absolute inset-0 flex items-center justify-end p-4">
+      <div className="absolute inset-0 flex items-center justify-end pr-4">
         <div className="w-[35%] h-full flex items-center justify-center">
           <div className="relative w-full h-full opacity-80">
             <Image
