@@ -58,7 +58,7 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
           <CardContent className="pb-4">
             <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center overflow-hidden">
               {isPlaceholderImage ? (
-                <ExercisePlaceholder title={name} />
+                <ExercisePlaceholder title={name} tags={tags} />
               ) : image_url ? (
                 <div className="relative w-full h-full">
                   <Image 

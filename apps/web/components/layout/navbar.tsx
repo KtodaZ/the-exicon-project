@@ -1,17 +1,31 @@
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useState } from 'react';
 import { LoadingDots } from '@/components/icons';
 import Image from 'next/image';
 import { MenuIcon } from '@heroicons/react/outline';
 import Link from 'next/link';
+import { useSession, authClient } from '@/lib/auth-client';
 
 export default function Navbar({
   setSidebarOpen
 }: {
   setSidebarOpen: (open: boolean) => void;
 }) {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const [loading, setLoading] = useState(false);
+
+  const handleSignIn = async () => {
+    setLoading(true);
+    try {
+      await authClient.signIn.social({
+        provider: 'github',
+        callbackURL: '/profile',
+      });
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <nav
@@ -26,9 +40,9 @@ export default function Navbar({
         <span className="sr-only">Open sidebar</span>
         <MenuIcon className="h-6 w-6" aria-hidden="true" />
       </button>
-      {status !== 'loading' &&
+      {!isPending &&
         (session?.user ? (
-          <Link href={`/${session.username || 'profile'}`}>
+          <Link href={`/${session.user.name || 'profile'}`}>
             <a className="w-8 h-8 rounded-full overflow-hidden">
               <Image
                 src={
@@ -46,10 +60,7 @@ export default function Navbar({
         ) : (
           <button
             disabled={loading}
-            onClick={() => {
-              setLoading(true);
-              signIn('github', { callbackUrl: `/profile` });
-            }}
+            onClick={handleSignIn}
             className={`${
               loading
                 ? 'bg-gray-200 border-gray-300'

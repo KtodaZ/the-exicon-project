@@ -1,6 +1,5 @@
 import '@/styles/globals.css';
 import { AppProps } from 'next/app';
-import { SessionProvider } from 'next-auth/react';
 import Head from 'next/head';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -8,7 +7,7 @@ import { MainLayout } from '@/components/layout/main-layout';
 
 export default function MyApp({
   Component,
-  pageProps: { session, ...pageProps }
+  pageProps
 }: AppProps) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -21,16 +20,14 @@ export default function MyApp({
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider session={session}>
-        <Head>
-          <title>The Exicon Project</title>
-          <meta name="description" content="The Exicon Project - A comprehensive exercise collection" />
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
-        <MainLayout>
-          <Component {...pageProps} />
-        </MainLayout>
-      </SessionProvider>
+      <Head>
+        <title>The Exicon Project</title>
+        <meta name="description" content="The Exicon Project - A comprehensive exercise collection" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <MainLayout>
+        <Component {...pageProps} />
+      </MainLayout>
     </QueryClientProvider>
   );
 }

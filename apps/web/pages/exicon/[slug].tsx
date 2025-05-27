@@ -118,7 +118,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               {video_url ? (
                 <VideoPlayer src={video_url} posterImage={image_url || undefined} />
               ) : isPlaceholderImage ? (
-                <ExercisePlaceholder title={name} />
+                <ExercisePlaceholder title={name} tags={tags} />
               ) : image_url ? (
                 <Image
                   src={image_url}
