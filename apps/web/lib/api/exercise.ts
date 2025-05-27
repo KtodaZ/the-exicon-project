@@ -21,14 +21,16 @@ export async function getAllExercises(
   limit: number = 12
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
   const cacheKey = cacheKeys.allExercises(page, limit);
+  console.log(`🔍 getAllExercises called - page: ${page}, limit: ${limit}`);
+  
   const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
   
   if (cached && cached.exercises.length > 0) {
-    console.log('getAllExercises using cached result with', cached.exercises.length, 'exercises');
+    console.log(`✅ getAllExercises using cached result with ${cached.exercises.length} exercises (total: ${cached.totalCount})`);
     return cached;
   }
 
-  console.log('MongoDB connection starting for getAllExercises...');
+  console.log('📊 getAllExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   console.log('Connected to database:', db.databaseName);
   const collection = db.collection('exercises');
@@ -91,6 +93,7 @@ export async function getAllExercises(
     const totalCount = await collection.countDocuments({});
     
     const result = { exercises, totalCount };
+    console.log(`💾 Caching getAllExercises result (${exercises.length} exercises, ${totalCount} total)`);
     await cache.set(cacheKey, result, cacheTTL.allExercises);
     
     return result;
@@ -103,13 +106,16 @@ export async function getAllExercises(
 // Get single exercise by slug
 export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | null> {
   const cacheKey = cacheKeys.exerciseBySlug(slug);
+  console.log(`🔍 getExerciseBySlug called - slug: ${slug}`);
+  
   const cached = await cache.get<ExerciseDetail>(cacheKey);
   
   if (cached) {
+    console.log(`✅ getExerciseBySlug using cached result for slug: ${slug}`);
     return cached;
   }
 
-  console.log('getExerciseBySlug:', { slug });
+  console.log(`📊 getExerciseBySlug cache miss - fetching from MongoDB for slug: ${slug}`);
   const db = await getDatabase();
   
   try {
@@ -117,9 +123,10 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
       .collection('exercises')
       .findOne<Exercise>({ urlSlug: slug });
 
-    console.log('Exercise lookup result:', exercise ? 'Found' : 'Not found');
+    console.log('Exercise lookup result:', exercise ? `Found: ${exercise.name}` : 'Not found');
     
     if (!exercise) {
+      console.log(`❌ Exercise not found for slug: ${slug}`);
       return null;
     }
 
@@ -129,6 +136,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
     }
 
     // Get similar exercises - pass string ID directly
+    console.log(`🔗 Fetching similar exercises for: ${exercise.name} (tags: ${exercise.tags.join(', ')})`);
     const similarExercises = await getSimilarExercises(exercise.tags, exercise._id);
     
     const result = {
@@ -136,6 +144,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
       similarExercises
     };
     
+    console.log(`💾 Caching exercise detail for slug: ${slug} (with ${similarExercises.length} similar exercises)`);
     await cache.set(cacheKey, result, cacheTTL.exerciseDetail);
     
     return result;
@@ -171,12 +180,16 @@ export async function getSimilarExercises(
   limit: number = 8
 ): Promise<ExerciseListItem[]> {
   const cacheKey = cacheKeys.similarExercises(excludeId, tags, limit);
+  console.log(`🔍 getSimilarExercises called - tags: [${tags.join(', ')}], excludeId: ${excludeId}, limit: ${limit}`);
+  
   const cached = await cache.get<ExerciseListItem[]>(cacheKey);
   
   if (cached) {
+    console.log(`✅ getSimilarExercises using cached result with ${cached.length} exercises`);
     return cached;
   }
 
+  console.log('📊 getSimilarExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   
   console.log('Finding similar exercises for tags:', tags, 'excluding ID:', excludeId);
@@ -263,6 +276,7 @@ export async function getSimilarExercises(
   // Remove the scoring fields before returning
   const cleanedExercises = similarExercises.map(({ matchingTagsCount, similarityScore, ...exercise }) => exercise);
   
+  console.log(`💾 Caching similar exercises result (${cleanedExercises.length} exercises)`);
   await cache.set(cacheKey, cleanedExercises, cacheTTL.similarExercises);
   
   return cleanedExercises as ExerciseListItem[];
@@ -276,15 +290,16 @@ export async function searchExercises(
   limit: number = 12
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
   const cacheKey = cacheKeys.searchExercises(query, tags, page, limit);
+  console.log(`🔍 searchExercises called - query: "${query}", tags: [${tags.join(', ')}], page: ${page}, limit: ${limit}`);
+  
   const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
   
   if (cached) {
-    console.log('searchExercises using cached result with', 
-      cached.exercises?.length || 0, 'exercises');
+    console.log(`✅ searchExercises using cached result with ${cached.exercises?.length || 0} exercises (total: ${cached.totalCount})`);
     return cached;
   }
 
-  console.log('searchExercises MongoDB connection starting...');
+  console.log('📊 searchExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   console.log('searchExercises connected to database:', db.databaseName);
   
@@ -385,6 +400,7 @@ export async function searchExercises(
     });
     
     const result = { exercises, totalCount };
+    console.log(`💾 Caching search results (${exercises.length} exercises, ${totalCount} total)`);
     await cache.set(cacheKey, result, cacheTTL.searchResults);
     
     return result;
@@ -397,12 +413,16 @@ export async function searchExercises(
 // Get popular tags
 export async function getPopularTags(limit: number = 10): Promise<{ tag: string; count: number }[]> {
   const cacheKey = cacheKeys.popularTags();
+  console.log(`🔍 getPopularTags called - limit: ${limit}`);
+  
   const cached = await cache.get<{ tag: string; count: number }[]>(cacheKey);
   
   if (cached) {
+    console.log(`✅ getPopularTags using cached result with ${cached.length} tags`);
     return cached;
   }
 
+  console.log('📊 getPopularTags cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   
   const pipeline = [
@@ -418,6 +438,10 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
     .aggregate(pipeline)
     .toArray() as { tag: string; count: number }[];
   
+  console.log(`💾 Caching popular tags result (${result.length} tags)`);
+  if (result.length > 0) {
+    console.log('Top tags:', result.slice(0, 5).map(t => `${t.tag} (${t.count})`).join(', '));
+  }
   await cache.set(cacheKey, result, cacheTTL.popularTags);
   
   return result;

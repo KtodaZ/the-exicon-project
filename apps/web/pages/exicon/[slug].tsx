@@ -9,6 +9,7 @@ import { ExerciseDetail } from '@/lib/models/exercise';
 import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
+import { ExercisePlaceholder } from '@/components/ui/exercise-placeholder';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 
 // Custom hook to get window size
@@ -75,6 +76,10 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
   } = exercise;
 
   const exerciseCount = getExerciseCount();
+  
+  // Check if this is one of the placeholder image URLs
+  const isPlaceholderImage = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
+                            image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
 
   return (
     <>
@@ -111,7 +116,9 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
             {/* Video or Image */}
             <div className="max-w-2xl mx-auto bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video mb-8 flex items-center justify-center overflow-hidden shadow-lg">
               {video_url ? (
-                <VideoPlayer src={video_url} />
+                <VideoPlayer src={video_url} posterImage={image_url || undefined} />
+              ) : isPlaceholderImage ? (
+                <ExercisePlaceholder title={name} />
               ) : image_url ? (
                 <Image
                   src={image_url}

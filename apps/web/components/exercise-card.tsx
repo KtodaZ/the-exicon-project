@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { VideoPlayer } from './video-player';
 import Image from "next/image";
+import { ExercisePlaceholder } from './ui/exercise-placeholder';
 
 interface ExerciseCardProps {
   exercise: ExerciseListItem;
@@ -14,6 +15,10 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardProps) {
   const { name, description, tags, urlSlug, difficulty, video_url, image_url } = exercise;
+  
+  // Check if this is one of the placeholder image URLs
+  const isPlaceholderImage = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
+                            image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
   
   // Function to determine difficulty level text and color
   const getDifficultyInfo = (difficultyValue: number) => {
@@ -52,7 +57,9 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
           </CardHeader>
           <CardContent className="pb-4">
             <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center overflow-hidden">
-              {image_url ? (
+              {isPlaceholderImage ? (
+                <ExercisePlaceholder title={name} />
+              ) : image_url ? (
                 <div className="relative w-full h-full">
                   <Image 
                     src={image_url} 

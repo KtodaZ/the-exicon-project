@@ -221,6 +221,9 @@ export default function ExiconPage({
                 tags={popularTags}
                 activeTags={activeTags}
                 onTagClick={toggleTag}
+                showCounts={false}
+                initialDisplayCount={20}
+                showViewMore={true}
               />
             </div>
 
@@ -330,8 +333,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       exercisesData = await getAllExercises(currentPage, 12);
     }
     
-    // Get popular tags
-    const popularTags = await getPopularTags();
+    // Get popular tags (no limit to show all tags)
+    const popularTags = await getPopularTags(1000);
     
     return {
       props: {
