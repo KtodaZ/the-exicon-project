@@ -72,15 +72,15 @@ const TAG_IMAGE_MAP: Record<WorkoutTag, string> = {
   [WORKOUT_TAGS.TIMER]: '/categories/timer.png',
   [WORKOUT_TAGS.PARTNER]: '/categories/partner.png',
   [WORKOUT_TAGS.JUMP]: '/categories/jump.png',
-  [WORKOUT_TAGS.CORE]: '/categories/core.png',
   [WORKOUT_TAGS.SQUATS]: '/categories/squat.png', // Note: image is 'squat.png'
   [WORKOUT_TAGS.COUPON]: '/categories/coupon.png',
   [WORKOUT_TAGS.MERKIN]: '/categories/merkin.png',
+  [WORKOUT_TAGS.BURPEE]: '/categories/merkin.png',
+  [WORKOUT_TAGS.CORE]: '/categories/core.png',
 
 
   // Fallback mappings (medium priority - using full-body as default)
   [WORKOUT_TAGS.ENDURANCE]: '/categories/run.png',
-  [WORKOUT_TAGS.BURPEE]: '/categories/merkin.png',
   [WORKOUT_TAGS.LUNGES]: '/categories/lower-body.png',
   [WORKOUT_TAGS.SPRINTS]: '/categories/run.png',
   [WORKOUT_TAGS.FLEXIBILITY]: '/categories/full-body.png',
@@ -121,10 +121,11 @@ export function getBestTag(tags: string[]): WorkoutTag {
   // Priority order: unique specific tags first, then general ones
   const priorityTags = [
     WORKOUT_TAGS.STAIRS, WORKOUT_TAGS.CRAWL, WORKOUT_TAGS.PLANK, WORKOUT_TAGS.MUSIC,
-    WORKOUT_TAGS.PULL_UP_BAR, WORKOUT_TAGS.FIELD, WORKOUT_TAGS.GAME, WORKOUT_TAGS.TRACK,
+    WORKOUT_TAGS.PULL_UP_BAR, WORKOUT_TAGS.GAME, WORKOUT_TAGS.TRACK,
     WORKOUT_TAGS.PLYOMETRICS, WORKOUT_TAGS.RUN, WORKOUT_TAGS.TIMER, WORKOUT_TAGS.PARTNER,
-    WORKOUT_TAGS.JUMP, WORKOUT_TAGS.CORE, WORKOUT_TAGS.SQUATS, WORKOUT_TAGS.COUPON,
-    WORKOUT_TAGS.MERKIN, WORKOUT_TAGS.UPPER_BODY, WORKOUT_TAGS.LOWER_BODY
+    WORKOUT_TAGS.JUMP, WORKOUT_TAGS.SQUATS, WORKOUT_TAGS.COUPON,
+    WORKOUT_TAGS.MERKIN, WORKOUT_TAGS.BURPEE, WORKOUT_TAGS.CORE,
+    WORKOUT_TAGS.UPPER_BODY, WORKOUT_TAGS.LOWER_BODY
   ];
   
   // Find the first priority tag that exists in the exercise tags

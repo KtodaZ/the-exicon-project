@@ -9,7 +9,7 @@ import { ExerciseDetail } from '@/lib/models/exercise';
 import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
-import { ExercisePlaceholder } from '@/components/ui/exercise-placeholder';
+import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-large';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 
 // Custom hook to get window size
@@ -118,7 +118,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               {video_url ? (
                 <VideoPlayer src={video_url} posterImage={image_url || undefined} />
               ) : isPlaceholderImage ? (
-                <ExercisePlaceholder title={name} tags={tags} />
+                <ExercisePlaceholderLarge title={name} tags={tags} />
               ) : image_url ? (
                 <Image
                   src={image_url}
