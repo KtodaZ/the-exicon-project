@@ -27,8 +27,8 @@ export default function Home({ isConnected }: HomeProps) {
             </p>
           </div>
 
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 px-[5%] pb-16">
-            <div className="col-span-1">
+          <div className="grid grid-cols-12 gap-6 lg:gap-8 px-[5%] pb-16">
+            <div className="col-span-12 md:col-span-6 lg:col-span-5 lg:col-start-2">
               <Card className="hover:shadow-lg transition-shadow duration-300 border-2 border-transparent hover:border-brand-red h-full flex flex-col">
                 <Link href="/exicon" className="flex flex-col h-full">
                   <CardHeader>
@@ -67,7 +67,7 @@ export default function Home({ isConnected }: HomeProps) {
               </Card>
             </div>
 
-            <div className="col-span-1">
+            <div className="col-span-12 md:col-span-6 lg:col-span-5">
               <Card className="hover:shadow-lg transition-shadow duration-300 border-2 border-transparent hover:border-gray-300 h-full flex flex-col">
                 <div className="flex flex-col h-full">
                   <CardHeader>
