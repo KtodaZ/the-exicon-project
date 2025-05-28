@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { MenuIcon } from '@heroicons/react/outline';
 import Link from 'next/link';
 import { useSession, authClient } from '@/lib/auth-client';
+import { useRouter } from 'next/router';
 
 export default function Navbar({
   setSidebarOpen
@@ -11,20 +12,10 @@ export default function Navbar({
   setSidebarOpen: (open: boolean) => void;
 }) {
   const { data: session, isPending } = useSession();
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSignIn = async () => {
-    setLoading(true);
-    try {
-      await authClient.signIn.social({
-        provider: 'github',
-        callbackURL: '/profile',
-      });
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSignIn = () => {
+    router.push('/auth/sign-in');
   };
 
   return (
@@ -42,32 +33,25 @@ export default function Navbar({
       </button>
       {!isPending &&
         (session?.user ? (
-          <Link href={`/${session.user.name || 'profile'}`}>
-            <a className="w-8 h-8 rounded-full overflow-hidden">
-              <Image
-                src={
-                  session.user.image ||
-                  `https://avatar.tobi.sh/${session.user.name}`
-                }
-                alt={session.user.name || 'User'}
-                width={300}
-                height={300}
-                placeholder="blur"
-                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQYV2PYsGHDfwAHNAMQumvbogAAAABJRU5ErkJggg=="
-              />
-            </a>
+          <Link href={`/${session.user.name || 'profile'}`} className="w-8 h-8 rounded-full overflow-hidden">
+            <Image
+              src={
+                session.user.image ||
+                `https://avatar.tobi.sh/${session.user.name}`
+              }
+              alt={session.user.name || 'User'}
+              width={300}
+              height={300}
+              placeholder="blur"
+              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQYV2PYsGHDfwAHNAMQumvbogAAAABJRU5ErkJggg=="
+            />
           </Link>
         ) : (
           <button
-            disabled={loading}
             onClick={handleSignIn}
-            className={`${
-              loading
-                ? 'bg-gray-200 border-gray-300'
-                : 'bg-black hover:bg-white border-black'
-            } w-36 h-8 py-1 text-white hover:text-black border rounded-md text-sm transition-all`}
+            className="bg-black hover:bg-white border-black w-36 h-8 py-1 text-white hover:text-black border rounded-md text-sm transition-all"
           >
-            {loading ? <LoadingDots color="gray" /> : 'Log in with GitHub'}
+            Sign In
           </button>
         ))}
     </nav>

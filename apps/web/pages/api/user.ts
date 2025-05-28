@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { searchUser, updateUser } from 'lib/api/user';
-import { getSession } from 'next-auth/react';
+import { auth } from '@/lib/auth';
 import { getMdxSource } from 'lib/api/user';
 
 export default async function handler(
@@ -19,8 +19,20 @@ export default async function handler(
     }
   } else if (req.method === 'PUT') {
     const { username, bio } = req.body;
-    const session = await getSession({ req });
-    if (!session || session.username !== username) {
+    
+    // Convert Next.js headers to Web API Headers format
+    const headers = new Headers();
+    Object.entries(req.headers).forEach(([key, value]) => {
+      if (value) {
+        headers.set(key, Array.isArray(value) ? value[0] : value);
+      }
+    });
+    
+    const session = await auth.api.getSession({
+      headers
+    });
+    
+    if (!session || session.user.name !== username) {
       return res.status(401).json({
         error: 'Unauthorized'
       });

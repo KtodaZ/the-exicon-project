@@ -4,12 +4,11 @@ import {
   CheckInCircleIcon,
   CheckIcon,
   EditIcon,
-  GitHubIcon,
   LoadingDots,
   UploadIcon,
   XIcon
 } from '@/components/icons';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/lib/auth-client';
 import BlurImage from '../blur-image';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -146,31 +145,6 @@ export default function Profile({
                 <CheckInCircleIcon className="w-6 h-6 text-[#0070F3]" />
               )}
             </div>
-            {user.verified ? (
-              <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-                <a
-                  href={`https://github.com/${user.username}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex justify-center px-4 py-2 border border-gray-800 hover:border-white shadow-sm text-sm font-medium rounded-md text-white font-mono bg-black focus:outline-none focus:ring-0 transition-all"
-                >
-                  <GitHubIcon className="mr-3 h-5 w-5 text-white" />
-                  <span>View GitHub Profile</span>
-                </a>
-              </div>
-            ) : (
-              <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-                <a
-                  href="https://github.com/vercel/mongodb-starter"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex justify-center px-4 py-2 border border-gray-800 hover:border-white shadow-sm text-sm font-medium rounded-md text-white font-mono bg-black focus:outline-none focus:ring-0 transition-all"
-                >
-                  <GitHubIcon className="mr-3 h-5 w-5 text-white" />
-                  <span>Demo Account</span>
-                </a>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -246,23 +220,20 @@ export default function Profile({
               <CheckIcon className="h-4 w-4 text-white" />
             )}
           </button>
-          <Link href={`/${user.username}`} shallow replace scroll={false}>
-            <a className="rounded-full border border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
-              <XIcon className="h-4 w-4 text-white" />
-            </a>
+          <Link href={`/${user.username}`} shallow replace scroll={false} className="rounded-full border border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
+            <XIcon className="h-4 w-4 text-white" />
           </Link>
         </div>
-      ) : session?.username === user.username ? (
+      ) : session?.user?.name === user.username ? (
         <Link
           href={{ query: { settings: true } }}
           as="/settings"
           shallow
           replace
           scroll={false}
+          className="fixed bottom-10 right-10 rounded-full border bg-black border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all"
         >
-          <a className="fixed bottom-10 right-10 rounded-full border bg-black border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
-            <EditIcon className="h-4 w-4 text-white" />
-          </a>
+          <EditIcon className="h-4 w-4 text-white" />
         </Link>
       ) : null}
     </div>

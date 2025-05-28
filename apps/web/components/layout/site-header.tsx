@@ -2,37 +2,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
+import { authClient, useSession } from '@/lib/auth-client';
 import Image from 'next/image';
 
 export function SiteHeader() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const { data: session, isPending } = useSession();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-
-    const checkSession = async () => {
-      try {
-        const { data } = await authClient.getSession();
-        setSession(data);
-      } catch (error) {
-        console.error('Session check failed:', error);
-        setSession(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-  }, [isClient]);
   
   const isActive = (path: string) => {
     return router.pathname === path || router.pathname.startsWith(`${path}/`);
@@ -47,86 +27,67 @@ export function SiteHeader() {
     }
   };
 
-  const handleGitHubSignIn = async () => {
-    setLoading(true);
-    try {
-      await authClient.signIn.social({
-        provider: 'github',
-        callbackURL: '/exicon',
-      });
-    } catch (error) {
-      console.error('GitHub sign in failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <header className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-3 font-bayon text-[20px] text-gray-900 dark:text-white">
-              <Image
-                src="/f3-logo.webp"
-                alt="F3 Logo"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
-              The Exicon Project
-            </Link>
-            <nav className="hidden md:flex gap-6">
-              <Link 
-                href="/exicon" 
-                className={`text-sm font-medium transition-colors hover:text-brand-red ${
-                  isActive('/exicon') 
-                    ? 'text-brand-red' 
-                    : 'text-gray-600 dark:text-gray-300'
-                }`}
+    <header className="border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-900 whitespace-nowrap">The Exicon Project</Link>
+            </div>
+            <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link
+                href="/"
+                className={`${
+                  isActive('/') && router.pathname === '/'
+                    ? 'border-indigo-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
+              >
+                Home
+              </Link>
+              <Link
+                href="/exicon"
+                className={`${
+                  isActive('/exicon')
+                    ? 'border-indigo-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
               >
                 Exicon
               </Link>
-              <span className="text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
-                Lexicon (Coming Soon)
-              </span>
             </nav>
           </div>
-          <div className="flex items-center gap-4">
-            <Link 
-              href="/components" 
-              className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-            >
-              Components
-            </Link>
-            
-            {/* Authentication UI */}
-            <div className="flex items-center gap-2">
-              {isLoading || !isClient ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                  <div className="w-16 h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                </div>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            <div className="flex items-center space-x-4">
+              {!isClient || isPending ? (
+                <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
               ) : session?.user ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Welcome, {session.user.name}!
-                  </span>
-                  {session.user.image && (
-                    <Image
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
-                      width={32}
-                      height={32}
-                      className="rounded-full"
-                    />
-                  )}
-                  <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    {session.user.image && (
+                      <Image
+                        src={session.user.image}
+                        alt={session.user.name || 'User'}
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-gray-900">
+                      {session.user.name}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSignOut}
+                  >
                     Sign Out
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -140,14 +101,6 @@ export function SiteHeader() {
                     onClick={() => router.push('/auth/sign-up')}
                   >
                     Sign Up
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGitHubSignIn}
-                    disabled={loading}
-                  >
-                    {loading ? 'Loading...' : 'GitHub'}
                   </Button>
                 </div>
               )}
