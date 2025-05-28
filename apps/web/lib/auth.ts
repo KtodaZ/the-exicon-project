@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
+import { admin } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
+import { ac, admin as adminRole, maintainer, viewer } from "./permissions";
 
 // Create MongoDB client and database connection
 const client = new MongoClient(process.env.MONGODB_URI!);
@@ -39,6 +41,19 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
+
+  plugins: [
+    admin({
+      ac,
+      roles: {
+        admin: adminRole,
+        maintainer,
+        viewer,
+      },
+      defaultRole: "viewer",
+      adminRoles: ["admin"],
+    }),
+  ],
 });
 
 // For backward compatibility

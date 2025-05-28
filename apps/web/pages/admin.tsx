@@ -1,0 +1,155 @@
+import { useState, useEffect } from 'react';
+import { GetServerSideProps } from 'next';
+import Head from 'next/head';
+import { useSession } from '@/lib/auth-client';
+import { AdminDashboard } from '@/components/admin/admin-dashboard';
+import { permissions } from '@/lib/admin-utils';
+import { auth } from '@/lib/auth';
+
+interface AdminPageProps {
+  hasAccess: boolean;
+}
+
+export default function AdminPage({ hasAccess }: AdminPageProps) {
+  const { data: session, isPending } = useSession();
+  const [canAccess, setCanAccess] = useState(hasAccess);
+
+  // Double-check permissions on client side
+  useEffect(() => {
+    if (!session?.user) {
+      // setCanAccess(false); // Potentially redundant
+      return;
+    }
+    
+    const checkAccess = async () => {
+      try {
+        console.log('[admin.tsx] useEffect - Checking client-side access. Current permissions object:', permissions);
+        const canList = await permissions.canListUsers();
+        console.log('[admin.tsx] useEffect - permissions.canListUsers() returned:', canList);
+        setCanAccess(canList);
+      } catch (error) {
+        console.error('[admin.tsx] useEffect - Error checking client-side admin access:', error);
+        setCanAccess(false);
+      }
+    };
+    
+    checkAccess();
+  }, [session]);
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You must be logged in to access the admin panel.</p>
+          <a
+            href="/auth/sign-in"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Sign In
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Insufficient Permissions</h1>
+          <p className="text-gray-600 mb-2">
+            You don't have permission to access the admin panel.
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            Current role: {session.user && 'role' in session.user ? 
+              <span className="font-medium">{session.user.role as string}</span> : 
+              'Unknown'
+            }
+          </p>
+          <a
+            href="/"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            Back to Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Head>
+        <title>Admin Dashboard - Exicon Project</title>
+        <meta name="description" content="Admin dashboard for user management and permissions" />
+      </Head>
+      <div className="min-h-screen bg-gray-50">
+        <AdminDashboard />
+      </div>
+    </>
+  );
+}
+
+// Server-side authentication and permission check
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  try {
+    // Convert Next.js headers to Web API Headers format
+    const headers = new Headers();
+    Object.entries(context.req.headers).forEach(([key, value]) => {
+      if (value) {
+        headers.set(key, Array.isArray(value) ? value[0] : value);
+      }
+    });
+
+    // Get session from server
+    const session = await auth.api.getSession({
+      headers,
+    });
+
+    // If no session, allow client to handle redirect
+    if (!session?.user) {
+      return {
+        props: {
+          hasAccess: false,
+        },
+      };
+    }
+
+    // Check if user has admin permissions server-side
+    const hasPermissionResult = await auth.api.userHasPermission({
+      body: {
+        userId: session.user.id,
+        permissions: {
+          user: ["list"],
+        },
+      },
+    });
+
+    console.log('getServerSideProps - hasPermissionResult:', hasPermissionResult);
+
+    return {
+      props: {
+        hasAccess: !!(hasPermissionResult?.success && !hasPermissionResult?.error),
+      },
+    };
+  } catch (error) {
+    console.error('Error in admin page getServerSideProps:', error);
+    return {
+      props: {
+        hasAccess: false,
+      },
+    };
+  }
+}; 

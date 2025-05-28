@@ -1,13 +1,25 @@
-import * as React from "react";
-import { Button, type ButtonProps } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge, type BadgeProps } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { SearchBar } from "@/components/ui/searchbar";
-import { TagList } from "@/components/ui/tag-list";
-import { FilterPill } from "@/components/ui/filter-pill";
-import { ActiveFilters } from "@/components/ui/active-filters";
+import Head from 'next/head';
+import { 
+  Button, 
+  buttonVariants,
+  type ButtonProps 
+} from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { SearchBar } from '@/components/ui/searchbar';
+import { TagList } from '@/components/ui/tag-list';
+import { Spinner } from '@/components/ui/spinner';
+import { FilterPill } from '@/components/ui/filter-pill';
+import { ActiveFilters } from '@/components/ui/active-filters';
+import { ExerciseActions } from '@/components/exercise-actions';
 
 export default function ComponentsPage() {
   return (
@@ -304,6 +316,14 @@ export default function ComponentsPage() {
           onRemove={(filter) => alert(`Remove ${filter.type}: ${filter.value}`)}
           onClearAll={() => alert('Clear all filters')}
         />
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Permission-Based Actions</h2>
+        <p className="text-gray-600">
+          This component demonstrates the admin permission system. The available actions change based on your user role.
+        </p>
+        <ExerciseActions exerciseId="example-exercise-123" />
       </section>
     </div>
   );
