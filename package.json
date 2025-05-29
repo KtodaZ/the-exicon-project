@@ -8,7 +8,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "prepare": "husky",
-    "fetch": "turbo run fetch"
+    "fetch": "turbo run fetch",
+    "clean": "rm -rf node_modules **/node_modules"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",

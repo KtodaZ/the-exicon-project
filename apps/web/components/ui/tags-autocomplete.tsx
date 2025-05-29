@@ -230,7 +230,7 @@ export function TagsAutocomplete({
                 onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
               >
                 <span className="text-sm text-gray-600">
-                  Add "{titleCase(inputValue.trim())}" as new tag
+                  Add &quot;{titleCase(inputValue.trim())}&quot; as new tag
                 </span>
               </div>
             )}

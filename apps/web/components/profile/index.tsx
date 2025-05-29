@@ -71,15 +71,6 @@ export default function Profile({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onKeyDown]);
 
-  // Ensure user object is not null before rendering content
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-white">User profile not found</p>
-      </div>
-    );
-  }
-  
   const handleSave = async () => {
     setError('');
     setSaving(true);
@@ -113,6 +104,15 @@ export default function Profile({
     toast.error('Image upload has been disabled for demo purposes.');
   }, []);
 
+  // Ensure user object is not null before rendering content
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white">User profile not found</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen pb-20">
       <div>

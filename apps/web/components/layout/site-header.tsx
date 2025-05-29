@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { authClient, useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import Image from 'next/image';
+import { PlusIcon, FileTextIcon, SettingsIcon } from 'lucide-react';
 
 export function SiteHeader() {
   const router = useRouter();
@@ -69,7 +70,7 @@ export function SiteHeader() {
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
-                  <span className="mr-1">➕</span>
+                  <PlusIcon className="mr-1 h-4 w-4" />
                   Submit Exercise
                 </Link>
               )}
@@ -84,7 +85,7 @@ export function SiteHeader() {
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
-                  <span className="mr-1">📋</span>
+                  <FileTextIcon className="mr-1 h-4 w-4" />
                   My Submissions
                 </Link>
               )}
@@ -99,7 +100,7 @@ export function SiteHeader() {
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                 >
-                  <span className="mr-1">⚙️</span>
+                  <SettingsIcon className="mr-1 h-4 w-4" />
                   Admin
                 </Link>
               )}

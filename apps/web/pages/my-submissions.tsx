@@ -33,8 +33,8 @@ export default function MySubmissionsPage() {
         if (response.ok && data.success && data.exercises) {
           // Sort by submission date
           const sortedExercises = data.exercises.sort((a: ExerciseListItem, b: ExerciseListItem) => {
-            const dateA = new Date(a.submittedAt || a.createdAt || 0);
-            const dateB = new Date(b.submittedAt || b.createdAt || 0);
+            const dateA = new Date(a.submittedAt || 0);
+            const dateB = new Date(b.submittedAt || 0);
             return dateB.getTime() - dateA.getTime();
           });
           
@@ -161,7 +161,7 @@ export default function MySubmissionsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">My Submissions</h1>
               <p className="mt-2 text-gray-600">
-                View and manage all exercises you've submitted to The Exicon Project.
+                View and manage all exercises you&apos;ve submitted to The Exicon Project.
               </p>
             </div>
             <Link href="/submit-exercise">
@@ -212,9 +212,11 @@ export default function MySubmissionsPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No submissions yet</h3>
+              {/* eslint-disable react/no-unescaped-entities */}
               <p className="text-gray-600 mb-4">
-                You haven't submitted any exercises yet. Start by creating your first exercise!
+                You have not submitted any exercises yet. Start by creating your first exercise!
               </p>
+              {/* eslint-enable react/no-unescaped-entities */}
               <Link href="/submit-exercise">
                 <Button>
                   Create Your First Exercise

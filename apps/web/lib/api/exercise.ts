@@ -567,8 +567,22 @@ export async function createExercise(exerciseData: {
     counter++;
   }
 
+  // Generate a unique string ID (instead of letting MongoDB create an ObjectId)
+  const generateStringId = () => {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}${random}`;
+  };
+
+  let exerciseId = generateStringId();
+  // Ensure ID is unique
+  while (await collection.findOne({ _id: exerciseId })) {
+    exerciseId = generateStringId();
+  }
+
   const now = new Date();
   const insertData = {
+    _id: exerciseId, // Explicitly set string ID
     name: exerciseData.name,
     description: exerciseData.description,
     text: exerciseData.text,
@@ -594,17 +608,17 @@ export async function createExercise(exerciseData: {
   };
 
   try {
-    const result = await collection.insertOne(insertData);
-    console.log('✅ Exercise created successfully:', result.insertedId);
+    const result = await collection.insertOne(insertData as any); // Cast to any to allow string _id
+    console.log('✅ Exercise created successfully:', exerciseId);
 
     // Clear relevant caches
     await cache.delete(cacheKeys.allExercises(1, 12));
     console.log('🗑️ Cleared exercises cache');
 
-    // Return the created exercise with the generated ID
+    // Return the created exercise with the string ID
     const exercise: Exercise = {
       ...insertData,
-      _id: result.insertedId.toString(),
+      _id: exerciseId, // Use the string ID we generated
     };
 
     return exercise;

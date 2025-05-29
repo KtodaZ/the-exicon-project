@@ -49,7 +49,7 @@ export default async function handler(
       return res.status(403).json({ error: 'Insufficient permissions to submit exercises' });
     }
 
-    const { name, description, text, tags, difficulty, video_url, image_url, status: requestedStatus } = req.body;
+    const { name, aliases, description, text, tags, difficulty, video_url, image_url, status: requestedStatus } = req.body;
 
     // Validate required fields
     if (!name || !description || !text) {
@@ -78,6 +78,7 @@ export default async function handler(
     // Create the exercise
     const exerciseData = {
       name: name.trim(),
+      aliases: Array.isArray(aliases) ? aliases : [],
       description: description.trim(),
       text: text.trim(),
       tags: Array.isArray(tags) ? tags : [],

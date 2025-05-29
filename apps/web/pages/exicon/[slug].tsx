@@ -3,6 +3,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { useSession } from '@/lib/auth-client';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import { TagBadge } from '@/components/ui/tag-badge';
 import { Button } from '@/components/ui/button';
 import { ExerciseDetail } from '@/lib/models/exercise';
@@ -42,6 +44,8 @@ interface ExerciseDetailPageProps {
 
 export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps) {
   const { width } = useWindowSize();
+  const { data: session } = useSession();
+  const { data: permissions } = usePermissions();
   
   // Determine how many exercises to show based on screen size
   const getExerciseCount = () => {
@@ -50,6 +54,14 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
     if (width >= 1024) return 6; // LG: 3x2 = 6
     return 6; // Smaller screens show 6
   };
+
+  // Determine if user can edit this exercise
+  const canEdit = session?.user && (
+    // User is owner of the exercise
+    exercise.submittedBy === session.user.id ||
+    // User has admin/maintainer permissions
+    permissions?.canEditExercise
+  );
 
   if (!exercise) {
     return (
@@ -66,6 +78,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 
   const { 
     name, 
+    aliases,
     tags, 
     description, 
     text, 
@@ -100,9 +113,34 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 
           {/* Exercise header */}
           <div className="mb-8 pt-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-              {name}
-            </h1>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                  {name}
+                </h1>
+                {aliases && aliases.length > 0 && (
+                  <div className="mt-2">
+                    {(() => {
+                      const uniqueAliases = aliases.filter(alias => 
+                        alias.name.trim().toLowerCase() !== name.trim().toLowerCase()
+                      );
+                      return uniqueAliases.length > 0 && (
+                        <span className="text-lg text-gray-600 dark:text-gray-400">
+                          Also known as: {uniqueAliases.map(alias => alias.name).join(', ')}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+              {canEdit && (
+                <Link href={`/edit-exercise/${exercise._id}`}>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    ⚙️ Edit Exercise
+                  </Button>
+                </Link>
+              )}
+            </div>
             
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-12">
@@ -148,7 +186,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               </h2>
               <div className="prose dark:prose-invert max-w-[65ch]">
                 <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-lg leading-relaxed">
-                  {text?.replace(/[^\x20-\x7E]/g, ' ')}
+                  {text?.replace(/[^\x20-\x7E\n\r]/g, ' ')}
                 </p>
               </div>
               

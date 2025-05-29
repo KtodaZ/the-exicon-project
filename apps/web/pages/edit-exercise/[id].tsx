@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExerciseStatus, Exercise } from '@/lib/models/exercise';
+import { ExerciseStatus, Exercise, Alias } from '@/lib/models/exercise';
 import { Textarea } from '../../components/ui/textarea';
 import { TagsAutocomplete } from '../../components/ui/tags-autocomplete';
 import { toast } from 'sonner';
 
 interface ExerciseFormData {
   name: string;
+  aliases: Alias[];
   description: string;
   text: string;
   tags: string[];
@@ -34,6 +35,7 @@ export default function EditExercisePage() {
 
   const [formData, setFormData] = useState<ExerciseFormData>({
     name: '',
+    aliases: [],
     description: '',
     text: '',
     tags: [],
@@ -60,6 +62,7 @@ export default function EditExercisePage() {
           // Populate form with existing data
           setFormData({
             name: exerciseData.name || '',
+            aliases: exerciseData.aliases || [],
             description: exerciseData.description || '',
             text: exerciseData.text || '',
             tags: exerciseData.tags || [],
@@ -103,6 +106,32 @@ export default function EditExercisePage() {
     setFormData(prev => ({
       ...prev,
       tags,
+    }));
+  };
+
+  const handleAddAlias = (aliasName: string) => {
+    if (!aliasName.trim()) return;
+    
+    const newAlias: Alias = {
+      name: aliasName.trim(),
+      id: aliasName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    };
+
+    // Check if alias already exists
+    if (formData.aliases.some(alias => alias.name.toLowerCase() === newAlias.name.toLowerCase())) {
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      aliases: [...prev.aliases, newAlias],
+    }));
+  };
+
+  const handleRemoveAlias = (aliasToRemove: Alias) => {
+    setFormData(prev => ({
+      ...prev,
+      aliases: prev.aliases.filter(alias => alias.id !== aliasToRemove.id),
     }));
   };
 
@@ -186,7 +215,7 @@ export default function EditExercisePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to edit exercises.</p>
+          <p className="text-gray-600">You don&apos;t have permission to edit exercises.</p>
         </div>
       </div>
     );
@@ -197,7 +226,7 @@ export default function EditExercisePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Exercise Not Found</h1>
-          <p className="text-gray-600">The exercise you're trying to edit doesn't exist.</p>
+          <p className="text-gray-600">The exercise you&apos;re trying to edit doesn&apos;t exist.</p>
         </div>
       </div>
     );
@@ -244,6 +273,61 @@ export default function EditExercisePage() {
                     placeholder="e.g., Navy Seal Burpee"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Also Known As (Aliases)
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Add an alias..."
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const target = e.target as HTMLInputElement;
+                            handleAddAlias(target.value);
+                            target.value = '';
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={(e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          if (input) {
+                            handleAddAlias(input.value);
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {formData.aliases.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.aliases.map((alias) => (
+                          <Badge
+                            key={alias.id}
+                            variant="secondary"
+                            className="flex items-center gap-1 pr-1"
+                          >
+                            {alias.name}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAlias(alias)}
+                              className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>

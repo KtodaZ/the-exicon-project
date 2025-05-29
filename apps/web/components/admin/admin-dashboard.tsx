@@ -99,7 +99,7 @@ export function AdminDashboard() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
-                  <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+                  <p className="text-gray-600">You don&apos;t have permission to access the admin panel.</p>
                 </div>
               </CardContent>
             </Card>
@@ -235,7 +235,7 @@ export function AdminDashboard() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {user.banned ? (
+                          {user?.banned ? (
                             <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
                               Banned
                               {user.banReason && <div className="text-xs">Reason: {user.banReason}</div>}
@@ -250,7 +250,7 @@ export function AdminDashboard() {
                           <div className="flex space-x-2">
                             {permissions?.canBanUser && (
                               <>
-                                {user.banned ? (
+                                {user?.banned ? (
                                   <Button
                                     size="sm"
                                     variant="outline"
