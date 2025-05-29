@@ -5,6 +5,7 @@ import { adminActions } from '@/lib/admin-utils';
 import { ExerciseManagement } from './exercise-management';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClipboardList, Plus, Crown, Ban, User } from 'lucide-react';
 
 interface User {
   id: string;
@@ -140,31 +141,31 @@ export function AdminDashboard() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className={`flex items-center space-x-2 ${permissions?.canListUsers ? 'text-green-600' : 'text-red-600'}`}>
-                <span>📋</span>
+                <ClipboardList className="h-4 w-4" />
                 <span className="text-sm">
                   List Users: {permissions?.canListUsers ? '✓' : '✗'}
                 </span>
               </div>
               <div className={`flex items-center space-x-2 ${permissions?.canCreateUser ? 'text-green-600' : 'text-red-600'}`}>
-                <span>➕</span>
+                <Plus className="h-4 w-4" />
                 <span className="text-sm">
                   Create User: {permissions?.canCreateUser ? '✓' : '✗'}
                 </span>
               </div>
               <div className={`flex items-center space-x-2 ${permissions?.canSetUserRole ? 'text-green-600' : 'text-red-600'}`}>
-                <span>👑</span>
+                <Crown className="h-4 w-4" />
                 <span className="text-sm">
                   Set Roles: {permissions?.canSetUserRole ? '✓' : '✗'}
                 </span>
               </div>
               <div className={`flex items-center space-x-2 ${permissions?.canBanUser ? 'text-green-600' : 'text-red-600'}`}>
-                <span>🚫</span>
+                <Ban className="h-4 w-4" />
                 <span className="text-sm">
                   Ban Users: {permissions?.canBanUser ? '✓' : '✗'}
                 </span>
               </div>
               <div className={`flex items-center space-x-2 ${permissions?.canImpersonateUser ? 'text-green-600' : 'text-red-600'}`}>
-                <span>👤</span>
+                <User className="h-4 w-4" />
                 <span className="text-sm">
                   Impersonate: {permissions?.canImpersonateUser ? '✓' : '✗'}
                 </span>

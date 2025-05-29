@@ -32,31 +32,28 @@ export function ActiveFilters({
 
   return (
     <div className={className} {...props}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Active Filters
-        </h2>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
+          {filters.map((filter, index) => (
+            <FilterPill
+              key={`${filter.type}-${filter.value}-${index}`}
+              label={filter.type}
+              value={filter.value}
+              variant={variant}
+              onRemove={onRemove ? () => onRemove(filter) : undefined}
+            />
+          ))}
+        </div>
         {showClearAll && onClearAll && (
           <Button
             onClick={onClearAll}
             variant="ghost"
-            className="h-8 px-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="h-8 px-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ml-4"
           >
             <X className="h-4 w-4 mr-1" />
             Clear all
           </Button>
         )}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {filters.map((filter, index) => (
-          <FilterPill
-            key={`${filter.type}-${filter.value}-${index}`}
-            label={filter.type}
-            value={filter.value}
-            variant={variant}
-            onRemove={onRemove ? () => onRemove(filter) : undefined}
-          />
-        ))}
       </div>
     </div>
   );

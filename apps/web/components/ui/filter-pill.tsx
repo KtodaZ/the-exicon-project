@@ -22,6 +22,14 @@ export function FilterPill({
     gray: "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-200"
   };
 
+  // Format kebab-case values to Title Case
+  const formatValue = (val: string) => {
+    return val
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div
       className={cn(
@@ -32,7 +40,7 @@ export function FilterPill({
       {...props}
     >
       <span className="text-sm mr-1">{label}:</span>
-      <span className="text-sm font-medium mr-2">{value}</span>
+      <span className="text-sm font-medium mr-2">{formatValue(value)}</span>
       {onRemove && (
         <button
           type="button"

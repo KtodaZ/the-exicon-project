@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { ExerciseCard } from '@/components/exercise-card';
 import { ExerciseListItem } from '@/lib/models/exercise';
 import { toast } from 'sonner';
+import { Plus, Eye, Edit, Send, Trash2 } from 'lucide-react';
 
 export default function MySubmissionsPage() {
   const router = useRouter();
@@ -166,7 +167,8 @@ export default function MySubmissionsPage() {
             </div>
             <Link href="/submit-exercise">
               <Button>
-                ➕ New Exercise
+                <Plus className="h-4 w-4 mr-2" />
+                New Exercise
               </Button>
             </Link>
           </div>
@@ -243,7 +245,8 @@ export default function MySubmissionsPage() {
                       {exercise.status === 'active' ? (
                         <Link href={`/exicon/${exercise.urlSlug}`}>
                           <Button size="sm" variant="outline" className="bg-white text-black hover:bg-gray-100">
-                            👁️ View Live
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Live
                           </Button>
                         </Link>
                       ) : (
@@ -253,7 +256,8 @@ export default function MySubmissionsPage() {
                           className="bg-white text-black hover:bg-gray-100"
                           onClick={() => router.push(`/edit-exercise/${exercise._id}`)}
                         >
-                          ✏️ Edit
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
                         </Button>
                       )}
                       
@@ -264,14 +268,16 @@ export default function MySubmissionsPage() {
                             className="bg-blue-600 hover:bg-blue-700 text-white"
                             onClick={() => handleSubmitForReview(exercise._id)}
                           >
-                            📤 Submit
+                            <Send className="h-4 w-4 mr-2" />
+                            Submit
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDelete(exercise._id)}
                           >
-                            🗑️ Delete
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
                           </Button>
                         </>
                       )}

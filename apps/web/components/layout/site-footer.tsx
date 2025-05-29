@@ -21,10 +21,18 @@ export function SiteFooter() {
               Lexicon
             </span>
             <Link 
-              href="/components" 
+              href="/about" 
               className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
-              Components
+              About
+            </Link>
+            <Link 
+              href="https://github.com/f3-nation/the-exicon-project" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              GitHub
             </Link>
           </div>
         </div>

@@ -43,11 +43,10 @@ export const WORKOUT_TAGS = {
   TRACK: 'track',
   PLAYGROUND_SWING: 'playground-swing',
   PLAYGROUND: 'playground',
-  WATER: 'water',
+  AQUATICS: 'aquatics',
   
   // Special categories
   GAME: 'game',
-  BASE_ROUTINE: 'base-routine',
 } as const;
 
 // Create a union type from the values
@@ -94,8 +93,7 @@ const TAG_IMAGE_MAP: Record<WorkoutTag, string> = {
   [WORKOUT_TAGS.HILL]: '/categories/run.png',
   [WORKOUT_TAGS.PLAYGROUND_SWING]: '/categories/full-body.png',
   [WORKOUT_TAGS.PLAYGROUND]: '/categories/full-body.png',
-  [WORKOUT_TAGS.WATER]: '/categories/full-body.png',
-  [WORKOUT_TAGS.BASE_ROUTINE]: '/categories/routine.png',
+  [WORKOUT_TAGS.AQUATICS]: '/categories/full-body.png',
   [WORKOUT_TAGS.FIELD]: '/categories/full-body.png',
 
   // Body part mappings (low priority)
@@ -157,64 +155,63 @@ export function getTagImageSafe(tag: string): string {
 
 // Type for workout tag categories
 export type WorkoutTagCategory = 
-  | 'core-categories'
-  | 'exercise-types'
-  | 'equipment-props'
-  | 'body-parts'
-  | 'locations-environment'
-  | 'special-categories';
+  | 'fundamentals'
+  | 'exercises'
+  | 'equipment'
+  | 'isolation'
+  | 'locations'
+  | 'other';
 
 // Categorized tags for UI organization
 export const WORKOUT_TAG_CATEGORIES: Record<WorkoutTagCategory, WorkoutTag[]> = {
-  'core-categories': [
+  'fundamentals': [
     WORKOUT_TAGS.CORE,
-    WORKOUT_TAGS.MERKIN,
+    WORKOUT_TAGS.ENDURANCE,
     WORKOUT_TAGS.FULL_BODY,
     WORKOUT_TAGS.LOWER_BODY,
-    WORKOUT_TAGS.UPPER_BODY,
+    WORKOUT_TAGS.MERKIN,
     WORKOUT_TAGS.ROUTINE,
-    WORKOUT_TAGS.ENDURANCE,
+    WORKOUT_TAGS.UPPER_BODY,
   ],
-  'exercise-types': [
+  'exercises': [
+    WORKOUT_TAGS.BURPEE,
+    WORKOUT_TAGS.CRAWL,
+    WORKOUT_TAGS.JUMP,
+    WORKOUT_TAGS.LUNGES,
     WORKOUT_TAGS.PLANK,
     WORKOUT_TAGS.PLYOMETRICS,
     WORKOUT_TAGS.RUN,
-    WORKOUT_TAGS.SQUATS,
-    WORKOUT_TAGS.BURPEE,
-    WORKOUT_TAGS.LUNGES,
-    WORKOUT_TAGS.CRAWL,
-    WORKOUT_TAGS.JUMP,
     WORKOUT_TAGS.SPRINTS,
-    WORKOUT_TAGS.FLEXIBILITY,
+    WORKOUT_TAGS.SQUATS,
   ],
-  'equipment-props': [
+  'equipment': [
+    WORKOUT_TAGS.BENCH,
     WORKOUT_TAGS.COUPON,
-    WORKOUT_TAGS.PARTNER,
+    WORKOUT_TAGS.MUSIC,
+    WORKOUT_TAGS.PLAYGROUND_SWING,
     WORKOUT_TAGS.PULL_UP_BAR,
     WORKOUT_TAGS.TIMER,
-    WORKOUT_TAGS.MUSIC,
   ],
-  'body-parts': [
-    WORKOUT_TAGS.TRICEPS,
-    WORKOUT_TAGS.SHOULDERS,
+  'isolation': [
+    WORKOUT_TAGS.CALVES,
     WORKOUT_TAGS.CHEST,
     WORKOUT_TAGS.GLUTES,
-    WORKOUT_TAGS.CALVES,
+    WORKOUT_TAGS.SHOULDERS,
+    WORKOUT_TAGS.TRICEPS,
   ],
-  'locations-environment': [
+  'locations': [
+    WORKOUT_TAGS.AQUATICS,
     WORKOUT_TAGS.FIELD,
-    WORKOUT_TAGS.BENCH,
-    WORKOUT_TAGS.PARKING_LOT,
-    WORKOUT_TAGS.STAIRS,
     WORKOUT_TAGS.HILL,
-    WORKOUT_TAGS.TRACK,
-    WORKOUT_TAGS.PLAYGROUND_SWING,
+    WORKOUT_TAGS.PARKING_LOT,
     WORKOUT_TAGS.PLAYGROUND,
-    WORKOUT_TAGS.WATER,
+    WORKOUT_TAGS.STAIRS,
+    WORKOUT_TAGS.TRACK,
   ],
-  'special-categories': [
+  'other': [
+    WORKOUT_TAGS.FLEXIBILITY,
     WORKOUT_TAGS.GAME,
-    WORKOUT_TAGS.BASE_ROUTINE,
+    WORKOUT_TAGS.PARTNER,
   ],
 };
 

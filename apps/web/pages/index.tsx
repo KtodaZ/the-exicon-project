@@ -13,17 +13,17 @@ export default function Home({ isConnected }: HomeProps) {
     <>
       <Head>
         <title>The Exicon Project</title>
-        <meta name="description" content="A comprehensive collection of exercises and terminology" />
+        <meta name="description" content="An open source exercise lexicon for F3 Qs — built by the PAX, for the PAX." />
       </Head>
       
       <div className="min-h-screen bg-gray-100 dark:bg-black">
         <div className="container mx-auto pt-16">
-          <div className="text-center mb-8 pt-12">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-4">
+          <div className="text-center mb-12 pt-12">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 dark:text-white mb-6">
               The Exicon Project
             </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Your comprehensive resource for exercise knowledge and terminology
+            <p className="text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6 font-medium">
+              An open source and open idea exercise lexicon for F3 Qs — built by the PAX, for the PAX.
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export default function Home({ isConnected }: HomeProps) {
                   <CardHeader>
                     <CardTitle className="text-2xl md:text-3xl">Exicon</CardTitle>
                     <CardDescription>
-                      Browse our extensive collection of exercises
+                      Browse F3 exercises
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
@@ -73,7 +73,7 @@ export default function Home({ isConnected }: HomeProps) {
                   <CardHeader>
                     <CardTitle className="text-2xl md:text-3xl">Lexicon</CardTitle>
                     <CardDescription>
-                      Learn the terminology and language
+                      F3 terminology and language
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">

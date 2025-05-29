@@ -1,20 +1,36 @@
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { authClient, useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import Image from 'next/image';
-import { PlusIcon, FileTextIcon, SettingsIcon } from 'lucide-react';
+import { FileTextIcon, SettingsIcon, ChevronDownIcon } from 'lucide-react';
 
 export function SiteHeader() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const { data: permissions } = usePermissions();
   const [isClient, setIsClient] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsClient(true);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
   
   const isActive = (path: string) => {
@@ -36,7 +52,16 @@ export function SiteHeader() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900 whitespace-nowrap">The Exicon Project</Link>
+              <Link href="/" className="flex items-center space-x-3">
+                <Image
+                  src="/f3-logo.webp"
+                  alt="F3 Logo"
+                  width={32}
+                  height={32}
+                  className="flex-shrink-0"
+                />
+                <span className="text-xl font-bold text-gray-900 whitespace-nowrap" style={{ fontFamily: 'var(--font-logo)' }}>The Exicon Project</span>
+              </Link>
             </div>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
@@ -59,51 +84,6 @@ export function SiteHeader() {
               >
                 Exicon
               </Link>
-              
-              {/* Submit Exercise Link */}
-              {(permissions?.canSubmitExercise || permissions?.canCreateExercise) && (
-                <Link
-                  href="/submit-exercise"
-                  className={`${
-                    isActive('/submit-exercise')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  <PlusIcon className="mr-1 h-4 w-4" />
-                  Submit Exercise
-                </Link>
-              )}
-
-              {/* My Submissions Link */}
-              {!isPending && session?.user && (
-                <Link
-                  href="/my-submissions"
-                  className={`${
-                    isActive('/my-submissions')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  <FileTextIcon className="mr-1 h-4 w-4" />
-                  My Submissions
-                </Link>
-              )}
-              
-              {/* Admin Link */}
-              {permissions?.canListUsers && (
-                <Link
-                  href="/admin"
-                  className={`${
-                    isActive('/admin')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  <SettingsIcon className="mr-1 h-4 w-4" />
-                  Admin
-                </Link>
-              )}
             </nav>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
@@ -111,9 +91,11 @@ export function SiteHeader() {
               {!isClient || isPending ? (
                 <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
               ) : session?.user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                  
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="flex items-center space-x-2 text-gray-900 hover:text-gray-700 focus:outline-none"
+                  >
                     {session.user.image && (
                       <Image
                         src={session.user.image}
@@ -123,17 +105,52 @@ export function SiteHeader() {
                         className="rounded-full"
                       />
                     )}
-                    <span className="text-sm font-medium text-gray-900">
-                      {session.user.name}
+                    <span className="text-sm font-medium">
+                      {session.user.f3Name && session.user.f3Region 
+                        ? `${session.user.f3Name} (${session.user.f3Region})`
+                        : session.user.f3Name || session.user.name
+                      }
                     </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSignOut}
-                  >
-                    Sign Out
-                  </Button>
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </button>
+
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                      <div className="py-1">
+                        <Link
+                          href="/my-submissions"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          <FileTextIcon className="mr-3 h-4 w-4" />
+                          My Submissions
+                        </Link>
+                        
+                        {permissions?.canListUsers && (
+                          <Link
+                            href="/admin"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            onClick={() => setIsDropdownOpen(false)}
+                          >
+                            <SettingsIcon className="mr-3 h-4 w-4" />
+                            Admin
+                          </Link>
+                        )}
+                        
+                        <div className="border-t border-gray-100">
+                          <button
+                            onClick={() => {
+                              setIsDropdownOpen(false);
+                              handleSignOut();
+                            }}
+                            className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">

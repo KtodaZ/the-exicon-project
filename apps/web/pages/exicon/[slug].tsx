@@ -13,6 +13,7 @@ import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
 import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-large';
 import { getExerciseBySlug } from '@/lib/api/exercise';
+import { Settings } from 'lucide-react';
 
 // Custom hook to get window size
 function useWindowSize() {
@@ -136,7 +137,8 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               {canEdit && (
                 <Link href={`/edit-exercise/${exercise._id}`}>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
-                    ⚙️ Edit Exercise
+                    <Settings className="h-4 w-4" />
+                    Edit Exercise
                   </Button>
                 </Link>
               )}
