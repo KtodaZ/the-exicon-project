@@ -34,7 +34,7 @@ export default function AboutPage() {
                   This platform enables Qs across regions to contribute new routines, update existing entries, and share the creative fitness traditions of the F3 Nation.
                 </p>
                 <p className="text-lg leading-relaxed">
-                  We're not just building an exercise database — we're preserving and growing the culture, stories, and spirit that make F3 special.
+                  We&apos;re not just building an exercise database — we&apos;re preserving and growing the culture, stories, and spirit that make F3 special.
                 </p>
               </CardContent>
             </Card>
@@ -47,7 +47,7 @@ export default function AboutPage() {
               <CardContent className="prose dark:prose-invert max-w-none">
                 <p className="text-lg leading-relaxed mb-4">
                   The Exicon is a collection of named exercises used in F3 workouts, often paired with a unique story, method, or tradition. 
-                  It helps Qs (leaders) bring consistency, creativity, and fun to beatdowns while honoring F3's culture and mission.
+                  It helps Qs (leaders) bring consistency, creativity, and fun to beatdowns while honoring F3&apos;s culture and mission.
                 </p>
                 <p className="text-lg leading-relaxed mb-4">
                   You can view the official Exicon at <Link href="https://f3nation.com/Exicon" target="_blank" rel="noopener noreferrer" className="text-brand-red hover:underline">f3nation.com/Exicon</Link>.
@@ -69,7 +69,7 @@ export default function AboutPage() {
                   F3 language creates bonds and shared understanding across the nation.
                 </p>
                 <p className="text-lg leading-relaxed">
-                  We're also building a comprehensive lexicon of F3 terms to help new PAX understand the culture and language that makes F3 unique.
+                  We&apos;re also building a comprehensive lexicon of F3 terms to help new PAX understand the culture and language that makes F3 unique.
                 </p>
               </CardContent>
             </Card>
@@ -85,8 +85,8 @@ export default function AboutPage() {
                   every piece of feedback helps make this resource better for all PAX.
                 </p>
                 <p className="text-lg leading-relaxed mb-4">
-                  Whether you're a Q looking to contribute your favorite exercises, a developer wanting to improve the platform, 
-                  or just someone passionate about F3 culture — there's a place for you in this project.
+                  Whether you&apos;re a Q looking to contribute your favorite exercises, a developer wanting to improve the platform, 
+                  or just someone passionate about F3 culture — there&apos;s a place for you in this project.
                 </p>
                 <div className="flex gap-4 mt-6">
                   <Link href="https://discord.gg/qUKbvs7cx2" target="_blank" rel="noopener noreferrer">
@@ -111,11 +111,11 @@ export default function AboutPage() {
               <CardContent className="prose dark:prose-invert max-w-none">
                 <p className="text-lg leading-relaxed mb-4">
                   This project is rooted in the core values of F3: leave no man behind, but leave no man where you found him. 
-                  We're here to support each other, share knowledge, and grow together as a community.
+                  We&apos;re here to support each other, share knowledge, and grow together as a community.
                 </p>
                 <p className="text-lg leading-relaxed">
                   Every contribution, no matter how small, helps strengthen the bonds that connect PAX across regions and backgrounds. 
-                  Together, we're building something bigger than just an exercise database — we're preserving and growing the heart of F3.
+                  Together, we&apos;re building something bigger than just an exercise database — we&apos;re preserving and growing the heart of F3.
                 </p>
               </CardContent>
             </Card>
