@@ -10,3 +10,6 @@ TurboRepo project using pnpm with the following tech preferences:
 - fastify (for apis)
 - nextjs
 - vercel
+
+Important for mongo exercises collection - 
+id is stored as string, not object id

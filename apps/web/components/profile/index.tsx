@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import TextareaAutosize from 'react-textarea-autosize';
 import { MDXRemote } from 'next-mdx-remote';
+import { toast } from 'sonner';
 
 export const profileWidth = 'max-w-5xl mx-auto px-4 sm:px-6 lg:px-8';
 
@@ -108,6 +109,10 @@ export default function Profile({
     setSaving(false);
   };
 
+  const handleUpload = useCallback(async () => {
+    toast.error('Image upload has been disabled for demo purposes.');
+  }, []);
+
   return (
     <div className="min-h-screen pb-20">
       <div>
@@ -122,9 +127,7 @@ export default function Profile({
             {settingsPage && (
               <button
                 className="absolute bg-gray-800 bg-opacity-50 hover:bg-opacity-70 w-full h-full z-10 transition-all flex items-center justify-center"
-                onClick={() =>
-                  alert('Image upload has been disabled for demo purposes.')
-                }
+                onClick={handleUpload}
               >
                 <UploadIcon className="h-6 w-6 text-white" />
               </button>
@@ -177,16 +180,11 @@ export default function Profile({
       <div className={`${profileWidth} mt-16`}>
         <h2 className="font-semibold font-mono text-2xl text-white">Bio</h2>
         {settingsPage ? (
-          <>
+          <form action={handleSave} className="flex flex-col space-y-3">
             <TextareaAutosize
-              name="description"
-              onInput={(e) => {
-                setData({
-                  ...data,
-                  bio: (e.target as HTMLTextAreaElement).value
-                });
-              }}
-              className="mt-1 w-full max-w-2xl px-0 text-sm tracking-wider leading-6 text-white bg-black font-mono border-0 border-b border-gray-800 focus:border-white resize-none focus:outline-none focus:ring-0"
+              name="bio"
+              rows={5}
+              className="w-full max-w-2xl px-0 text-sm tracking-wider leading-6 text-white bg-black font-mono border-0 border-b border-gray-800 focus:border-white resize-none focus:outline-none focus:ring-0"
               placeholder="Enter a short bio about yourself... (Markdown supported)"
               value={data.bio}
             />
@@ -195,7 +193,13 @@ export default function Profile({
                 {data.bio.length}/256
               </p>
             </div>
-          </>
+            <button
+              className="rounded-md border border-black bg-black px-4 py-1.5 text-sm text-white transition-all hover:bg-white hover:text-black focus:outline-none focus:ring-4 focus:ring-gray-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:hover:border-stone-200 dark:hover:bg-black dark:hover:text-white dark:focus:ring-gray-600"
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </form>
         ) : (
           <article className="mt-3 max-w-2xl text-sm tracking-wider leading-6 text-white font-mono prose prose-headings:text-white prose-a:text-white">
             <MDXRemote {...data.bioMdx} />
@@ -207,19 +211,6 @@ export default function Profile({
       {settingsPage ? (
         <div className="fixed bottom-10 right-10 flex items-center space-x-3">
           <p className="text-sm text-gray-500">{error}</p>
-          <button
-            className={`${
-              saving ? 'cursor-not-allowed' : ''
-            } rounded-full border border-[#0070F3] hover:border-2 w-12 h-12 flex justify-center items-center transition-all`}
-            disabled={saving}
-            onClick={handleSave}
-          >
-            {saving ? (
-              <LoadingDots color="white" />
-            ) : (
-              <CheckIcon className="h-4 w-4 text-white" />
-            )}
-          </button>
           <Link href={`/${user.username}`} shallow replace scroll={false} className="rounded-full border border-gray-800 hover:border-white w-12 h-12 flex justify-center items-center transition-all">
             <XIcon className="h-4 w-4 text-white" />
           </Link>

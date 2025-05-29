@@ -331,11 +331,15 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     let exercisesData;
     
     if (searchQuery || selectedTags.length > 0) {
-      // Use search function if there's a query or tags
-      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 12);
+      // Use search function if there's a query or tags - explicitly pass status: 'active'
+      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 12, {
+        status: 'active'
+      });
     } else {
-      // Use getAllExercises for the default case
-      exercisesData = await getAllExercises(currentPage, 12);
+      // Use getAllExercises for the default case - explicitly pass status: 'active'
+      exercisesData = await getAllExercises(currentPage, 12, {
+        status: 'active'
+      });
     }
     
     // Get popular tags (no limit to show all tags)

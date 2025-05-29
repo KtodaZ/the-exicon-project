@@ -19,7 +19,7 @@ import { TagList } from '@/components/ui/tag-list';
 import { Spinner } from '@/components/ui/spinner';
 import { FilterPill } from '@/components/ui/filter-pill';
 import { ActiveFilters } from '@/components/ui/active-filters';
-import { ExerciseActions } from '@/components/exercise-actions';
+import { toast } from 'sonner';
 
 export default function ComponentsPage() {
   return (
@@ -30,6 +30,39 @@ export default function ComponentsPage() {
           A showcase of the components used in the Exicon Project with the grayscale theme and #AD0C02 red accents.
         </p>
       </div>
+
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Toast Notifications</h2>
+        <div className="flex flex-wrap gap-4">
+          <Button onClick={() => toast.success('Success! Operation completed successfully.')}>
+            Success Toast
+          </Button>
+          <Button 
+            variant="destructive" 
+            onClick={() => toast.error('Error! Something went wrong. Please try again.')}
+          >
+            Error Toast
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => toast.warning('Warning! Please review your input.')}
+          >
+            Warning Toast
+          </Button>
+          <Button 
+            variant="secondary" 
+            onClick={() => toast.info('Info: Here is some helpful information.')}
+          >
+            Info Toast
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => toast('Default toast message.')}
+          >
+            Default Toast
+          </Button>
+        </div>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-2xl font-bold">Buttons</h2>
@@ -204,18 +237,18 @@ export default function ComponentsPage() {
           <FilterPill
             label="Search"
             value="burpee"
-            onRemove={() => alert('Remove search filter')}
+            onRemove={() => toast.success('Search filter removed')}
           />
           <FilterPill
             label="Tag"
             value="cardio"
             variant="gray"
-            onRemove={() => alert('Remove tag filter')}
+            onRemove={() => toast.success('Tag filter removed')}
           />
           <FilterPill
             label="Category"
             value="strength"
-            onRemove={() => alert('Remove category filter')}
+            onRemove={() => toast.success('Category filter removed')}
           />
         </div>
       </section>
@@ -313,17 +346,9 @@ export default function ComponentsPage() {
             { type: 'Tag', value: 'chest' },
             { type: 'Tag', value: 'bodyweight' }
           ]}
-          onRemove={(filter) => alert(`Remove ${filter.type}: ${filter.value}`)}
-          onClearAll={() => alert('Clear all filters')}
+          onRemove={(filter) => toast.success(`Removed ${filter.type}: ${filter.value}`)}
+          onClearAll={() => toast.success('Cleared all filters')}
         />
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Permission-Based Actions</h2>
-        <p className="text-gray-600">
-          This component demonstrates the admin permission system. The available actions change based on your user role.
-        </p>
-        <ExerciseActions exerciseId="example-exercise-123" />
       </section>
     </div>
   );

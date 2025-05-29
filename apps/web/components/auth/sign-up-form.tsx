@@ -84,6 +84,7 @@ export function SignUpForm() {
               placeholder="Enter your F3 name"
               value={f3Name}
               onChange={(e) => setF3Name(e.target.value)}
+              required
             />
           </div>
           <div className="space-y-2">
@@ -96,6 +97,7 @@ export function SignUpForm() {
               placeholder="Enter your F3 region"
               value={f3Region}
               onChange={(e) => setF3Region(e.target.value)}
+              required
             />
           </div>
           <div className="space-y-2">

@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
-import { adminActions, permissions } from '@/lib/admin-utils';
+import { usePermissions } from '@/lib/hooks/use-permissions';
+import { adminActions } from '@/lib/admin-utils';
+import { ExerciseManagement } from './exercise-management';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface User {
   id: string;
@@ -16,43 +20,14 @@ interface User {
 
 export function AdminDashboard() {
   const { data: session } = useSession();
+  const { data: permissions, isLoading: permissionsLoading } = usePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [permissions_check, setPermissionsCheck] = useState({
-    canListUsers: false,
-    canCreateUser: false,
-    canSetRole: false,
-    canBanUser: false,
-    canImpersonate: false,
-  });
-
-  // Check permissions on mount
-  useEffect(() => {
-    const checkPermissions = async () => {
-      const [canListUsers, canCreateUser, canSetRole, canBanUser, canImpersonate] = await Promise.all([
-        permissions.canListUsers(),
-        permissions.canCreateUser(),
-        permissions.canSetUserRole(),
-        permissions.canBanUser(),
-        permissions.canImpersonateUser(),
-      ]);
-
-      setPermissionsCheck({
-        canListUsers,
-        canCreateUser,
-        canSetRole,
-        canBanUser,
-        canImpersonate,
-      });
-    };
-
-    checkPermissions();
-  }, []);
 
   // Load users if user has permission
   useEffect(() => {
     const loadUsers = async () => {
-      if (!permissions_check.canListUsers) return;
+      if (!permissions?.canListUsers) return;
       
       setLoading(true);
       const result = await adminActions.listUsers({ limit: 50 });
@@ -63,10 +38,10 @@ export function AdminDashboard() {
     };
 
     loadUsers();
-  }, [permissions_check.canListUsers]);
+  }, [permissions?.canListUsers]);
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'maintainer' | 'viewer') => {
-    if (!permissions_check.canSetRole) return;
+    if (!permissions?.canSetUserRole) return;
     
     const result = await adminActions.setUserRole(userId, newRole);
     if (result.success) {
@@ -77,7 +52,7 @@ export function AdminDashboard() {
   };
 
   const handleBanUser = async (userId: string, reason: string) => {
-    if (!permissions_check.canBanUser) return;
+    if (!permissions?.canBanUser) return;
     
     const result = await adminActions.banUser(userId, reason);
     if (result.success) {
@@ -88,7 +63,7 @@ export function AdminDashboard() {
   };
 
   const handleUnbanUser = async (userId: string) => {
-    if (!permissions_check.canBanUser) return;
+    if (!permissions?.canBanUser) return;
     
     const result = await adminActions.unbanUser(userId);
     if (result.success) {
@@ -99,7 +74,7 @@ export function AdminDashboard() {
   };
 
   const handleImpersonate = async (userId: string) => {
-    if (!permissions_check.canImpersonate) return;
+    if (!permissions?.canImpersonateUser) return;
     
     const result = await adminActions.impersonateUser(userId);
     if (result.success) {
@@ -109,163 +84,218 @@ export function AdminDashboard() {
   };
 
   // Show access denied if user doesn't have list permission
-  if (!permissions_check.canListUsers) {
+  if (!permissions?.canListUsers) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <p className="text-red-800">Access denied. You don't have permission to view this page.</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Admin Dashboard</h1>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-red-400 mb-4">
+                    <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
+                  <p className="text-gray-600">You don't have permission to access the admin panel.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <div className="text-sm text-gray-600">
-          Logged in as: <span className="font-semibold">{session?.user?.name}</span> 
-          {session?.user && 'role' in session.user && (
-            <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-              {session.user.role as string}
-            </span>
-          )}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="mt-2 text-gray-600">
+                Manage users, permissions, and exercise content.
+              </p>
+            </div>
+            <div className="text-sm text-gray-600">
+              Logged in as: <span className="font-semibold">{session?.user?.name}</span> 
+              {session?.user && 'role' in session.user && (
+                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  {session.user.role as string}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Permission Summary */}
-      <div className="mb-6 p-4 bg-gray-50 rounded">
-        <h3 className="font-semibold mb-2">Your Permissions:</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-          <div className={permissions_check.canListUsers ? 'text-green-600' : 'text-red-600'}>
-            📋 List Users: {permissions_check.canListUsers ? '✓' : '✗'}
-          </div>
-          <div className={permissions_check.canCreateUser ? 'text-green-600' : 'text-red-600'}>
-            ➕ Create User: {permissions_check.canCreateUser ? '✓' : '✗'}
-          </div>
-          <div className={permissions_check.canSetRole ? 'text-green-600' : 'text-red-600'}>
-            👑 Set Roles: {permissions_check.canSetRole ? '✓' : '✗'}
-          </div>
-          <div className={permissions_check.canBanUser ? 'text-green-600' : 'text-red-600'}>
-            🚫 Ban Users: {permissions_check.canBanUser ? '✓' : '✗'}
-          </div>
-          <div className={permissions_check.canImpersonate ? 'text-green-600' : 'text-red-600'}>
-            👤 Impersonate: {permissions_check.canImpersonate ? '✓' : '✗'}
-          </div>
-        </div>
-      </div>
+        {/* Permission Summary Card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Your Permissions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className={`flex items-center space-x-2 ${permissions?.canListUsers ? 'text-green-600' : 'text-red-600'}`}>
+                <span>📋</span>
+                <span className="text-sm">
+                  List Users: {permissions?.canListUsers ? '✓' : '✗'}
+                </span>
+              </div>
+              <div className={`flex items-center space-x-2 ${permissions?.canCreateUser ? 'text-green-600' : 'text-red-600'}`}>
+                <span>➕</span>
+                <span className="text-sm">
+                  Create User: {permissions?.canCreateUser ? '✓' : '✗'}
+                </span>
+              </div>
+              <div className={`flex items-center space-x-2 ${permissions?.canSetUserRole ? 'text-green-600' : 'text-red-600'}`}>
+                <span>👑</span>
+                <span className="text-sm">
+                  Set Roles: {permissions?.canSetUserRole ? '✓' : '✗'}
+                </span>
+              </div>
+              <div className={`flex items-center space-x-2 ${permissions?.canBanUser ? 'text-green-600' : 'text-red-600'}`}>
+                <span>🚫</span>
+                <span className="text-sm">
+                  Ban Users: {permissions?.canBanUser ? '✓' : '✗'}
+                </span>
+              </div>
+              <div className={`flex items-center space-x-2 ${permissions?.canImpersonateUser ? 'text-green-600' : 'text-red-600'}`}>
+                <span>👤</span>
+                <span className="text-sm">
+                  Impersonate: {permissions?.canImpersonateUser ? '✓' : '✗'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Users</h2>
-        </div>
-        
-        {loading ? (
-          <div className="p-8 text-center">Loading users...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">F3 Info</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="px-4 py-4">
-                      <div>
-                        <div className="font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      {permissions_check.canSetRole ? (
-                        <select
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'maintainer' | 'viewer')}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        >
-                          <option value="viewer">Viewer</option>
-                          <option value="maintainer">Maintainer</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      ) : (
-                        <span className={`px-2 py-1 text-xs rounded ${
-                          user.role === 'admin' ? 'bg-red-100 text-red-800' :
-                          user.role === 'maintainer' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {user.role}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-500">
-                      {user.f3Name && (
-                        <div>
-                          <div>Name: {user.f3Name}</div>
-                          {user.f3Region && <div>Region: {user.f3Region}</div>}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      {user.banned ? (
-                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                          Banned
-                          {user.banReason && <div className="text-xs">Reason: {user.banReason}</div>}
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                          Active
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex space-x-2">
-                        {permissions_check.canBanUser && (
-                          <>
-                            {user.banned ? (
-                              <button
-                                onClick={() => handleUnbanUser(user.id)}
-                                className="text-green-600 hover:text-green-900 text-sm"
-                              >
-                                Unban
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  const reason = prompt('Ban reason:');
-                                  if (reason) handleBanUser(user.id, reason);
-                                }}
-                                className="text-red-600 hover:text-red-900 text-sm"
-                              >
-                                Ban
-                              </button>
+        {/* Users Management Card */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Loading users...</p>
+              </div>
+            ) : (
+              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                <table className="min-w-full divide-y divide-gray-300">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">F3 Info</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {users.map((user) => (
+                      <tr key={user.id}>
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {permissions?.canSetUserRole ? (
+                            <select
+                              value={user.role}
+                              onChange={(e) => handleRoleChange(user.id, e.target.value as 'admin' | 'maintainer' | 'viewer')}
+                              className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            >
+                              <option value="viewer">Viewer</option>
+                              <option value="maintainer">Maintainer</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          ) : (
+                            <span className={`px-2 py-1 text-xs rounded ${
+                              user.role === 'admin' ? 'bg-red-100 text-red-800' :
+                              user.role === 'maintainer' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {user.role}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {user.f3Name && (
+                            <div>
+                              <div>Name: {user.f3Name}</div>
+                              {user.f3Region && <div>Region: {user.f3Region}</div>}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {user.banned ? (
+                            <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                              Banned
+                              {user.banReason && <div className="text-xs">Reason: {user.banReason}</div>}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex space-x-2">
+                            {permissions?.canBanUser && (
+                              <>
+                                {user.banned ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleUnbanUser(user.id)}
+                                    className="text-green-600 hover:text-green-700"
+                                  >
+                                    Unban
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      const reason = prompt('Ban reason:');
+                                      if (reason) handleBanUser(user.id, reason);
+                                    }}
+                                  >
+                                    Ban
+                                  </Button>
+                                )}
+                              </>
                             )}
-                          </>
-                        )}
-                        {permissions_check.canImpersonate && user.id !== session?.user?.id && (
-                          <button
-                            onClick={() => handleImpersonate(user.id)}
-                            className="text-blue-600 hover:text-blue-900 text-sm"
-                          >
-                            Impersonate
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                            {permissions?.canImpersonateUser && user.id !== session?.user?.id && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleImpersonate(user.id)}
+                                className="text-blue-600 hover:text-blue-700"
+                              >
+                                Impersonate
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Exercise Management Section */}
+        <ExerciseManagement />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/main-layout';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 export default function MyApp({
   Component,
@@ -28,6 +29,7 @@ export default function MyApp({
       <MainLayout>
         <Component {...pageProps} />
       </MainLayout>
+      <ToastProvider />
     </QueryClientProvider>
   );
 }

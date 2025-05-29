@@ -3,6 +3,8 @@ export interface Alias {
   id: string;
 }
 
+export type ExerciseStatus = 'draft' | 'submitted' | 'active' | 'archived';
+
 export interface Exercise {
   _id: string;
   aliases: Alias[];
@@ -28,6 +30,11 @@ export interface Exercise {
   urlSlug: string;
   video_url: string | null;
   image_url?: string | null;
+  status: ExerciseStatus;
+  submittedBy?: string;
+  submittedAt?: Date | string;
+  approvedBy?: string;
+  approvedAt?: Date | string;
 }
 
 export interface ExerciseListItem {
@@ -39,8 +46,12 @@ export interface ExerciseListItem {
   difficulty: number;
   video_url?: string | null;
   image_url?: string | null;
+  status: ExerciseStatus;
+  submittedBy?: string;
+  submittedAt?: Date | string;
 }
 
 export interface ExerciseDetail extends Exercise {
   similarExercises?: ExerciseListItem[];
+  authorName?: string;
 }

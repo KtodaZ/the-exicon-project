@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { GetServerSideProps } from 'next';
 import Head from 'next/head';
 import { useSession } from '@/lib/auth-client';
-import { AdminDashboard } from '@/components/admin/admin-dashboard';
-import { permissions } from '@/lib/admin-utils';
+import { usePermissions } from '@/lib/hooks/use-permissions';
 import { auth } from '@/lib/auth';
+import { AdminDashboard } from '@/components/admin/admin-dashboard';
 
 interface AdminPageProps {
   hasAccess: boolean;
@@ -12,31 +12,9 @@ interface AdminPageProps {
 
 export default function AdminPage({ hasAccess }: AdminPageProps) {
   const { data: session, isPending } = useSession();
-  const [canAccess, setCanAccess] = useState(hasAccess);
+  const { data: permissions, isLoading: permissionsLoading } = usePermissions();
 
-  // Double-check permissions on client side
-  useEffect(() => {
-    if (!session?.user) {
-      // setCanAccess(false); // Potentially redundant
-      return;
-    }
-    
-    const checkAccess = async () => {
-      try {
-        console.log('[admin.tsx] useEffect - Checking client-side access. Current permissions object:', permissions);
-        const canList = await permissions.canListUsers();
-        console.log('[admin.tsx] useEffect - permissions.canListUsers() returned:', canList);
-        setCanAccess(canList);
-      } catch (error) {
-        console.error('[admin.tsx] useEffect - Error checking client-side admin access:', error);
-        setCanAccess(false);
-      }
-    };
-    
-    checkAccess();
-  }, [session]);
-
-  if (isPending) {
+  if (isPending || permissionsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -64,26 +42,12 @@ export default function AdminPage({ hasAccess }: AdminPageProps) {
     );
   }
 
-  if (!canAccess) {
+  if (!permissions?.canListUsers) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Insufficient Permissions</h1>
-          <p className="text-gray-600 mb-2">
-            You don't have permission to access the admin panel.
-          </p>
-          <p className="text-sm text-gray-500 mb-6">
-            Current role: {session.user && 'role' in session.user ? 
-              <span className="font-medium">{session.user.role as string}</span> : 
-              'Unknown'
-            }
-          </p>
-          <a
-            href="/"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Back to Home
-          </a>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600">You don't have permission to access the admin panel.</p>
         </div>
       </div>
     );
@@ -92,12 +56,11 @@ export default function AdminPage({ hasAccess }: AdminPageProps) {
   return (
     <>
       <Head>
-        <title>Admin Dashboard - Exicon Project</title>
-        <meta name="description" content="Admin dashboard for user management and permissions" />
+        <title>Admin Dashboard - The Exicon Project</title>
+        <meta name="description" content="Administration panel for The Exicon Project" />
       </Head>
-      <div className="min-h-screen bg-gray-50">
-        <AdminDashboard />
-      </div>
+      
+      <AdminDashboard />
     </>
   );
 }

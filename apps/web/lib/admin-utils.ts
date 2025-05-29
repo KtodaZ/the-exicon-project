@@ -6,7 +6,7 @@ import { authClient } from "./auth-client";
  * Check if current user has specific permissions
  */
 export async function hasPermission(permissions: {
-  exercise?: ("create" | "edit" | "view" | "delete" | "publish")[];
+  exercise?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
   comment?: ("create" | "edit" | "delete" | "moderate")[];
   rating?: ("create" | "edit" | "delete")[];
   user?: ("create" | "list" | "ban" | "impersonate" | "delete" | "set-role" | "set-password")[];
@@ -16,10 +16,8 @@ export async function hasPermission(permissions: {
     const result = await authClient.admin.hasPermission({
       permissions,
     });
-    console.log('[admin-utils] hasPermission - API raw result:', JSON.stringify(result));
     const actualResult = result as any;
     const evaluation = !!(actualResult?.data?.success && !actualResult?.data?.error);
-    console.log('[admin-utils] hasPermission - actualResult.data.success:', actualResult?.data?.success, 'actualResult.data.error:', actualResult?.data?.error, 'evaluation:', evaluation);
     return evaluation;
   } catch (error) {
     console.error("[admin-utils] Error in hasPermission:", error);
@@ -33,7 +31,7 @@ export async function hasPermission(permissions: {
 export async function checkRolePermission(
   role: "admin" | "maintainer" | "viewer",
   permissions: {
-    exercise?: ("create" | "edit" | "view" | "delete" | "publish")[];
+    exercise?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
     comment?: ("create" | "edit" | "delete" | "moderate")[];
     rating?: ("create" | "edit" | "delete")[];
     user?: ("create" | "list" | "ban" | "impersonate" | "delete" | "set-role" | "set-password")[];
@@ -216,6 +214,9 @@ export const permissions = {
   canDeleteExercise: () => hasPermission({ exercise: ["delete"] }),
   canPublishExercise: () => hasPermission({ exercise: ["publish"] }),
   canViewExercise: () => hasPermission({ exercise: ["view"] }),
+  canSubmitExercise: () => hasPermission({ exercise: ["submit"] }),
+  canApproveExercise: () => hasPermission({ exercise: ["approve"] }),
+  canViewAllExercises: () => hasPermission({ exercise: ["view-all"] }),
 
   // Comment permissions
   canCreateComment: () => hasPermission({ comment: ["create"] }),

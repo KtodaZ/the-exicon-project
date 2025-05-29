@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAllExercises, searchExercises } from '@/lib/api/exercise';
+import { auth } from '@/lib/auth';
 
 export default async function handler(
   req: NextApiRequest,
@@ -12,7 +13,9 @@ export default async function handler(
       query = '', 
       tags = [], 
       page = '1', 
-      limit = '12' 
+      limit = '12',
+      status = 'active', // Default to active exercises for public
+      includeUserDrafts = false,
     } = req.query;
 
     const pageNum = parseInt(page as string, 10);
@@ -21,7 +24,48 @@ export default async function handler(
       ? tags as string[] 
       : tags ? [tags as string] : [];
 
-    console.log('Parsed parameters:', { query, tagsArray, pageNum, limitNum });
+    console.log('Parsed parameters:', { query, tagsArray, pageNum, limitNum, status, includeUserDrafts });
+
+    // Get session to determine user access level
+    let session = null;
+    try {
+      session = await auth.api.getSession({
+        headers: req.headers as any,
+      });
+    } catch (error) {
+      console.log('No session found, using public access');
+    }
+
+    // Determine what exercises the user can see
+    let allowedStatuses = ['active']; // Default: only active exercises
+
+    if (session?.user) {
+      // Check if user can view all exercises (admin/maintainer)
+      const canViewAll = await auth.api.userHasPermission({
+        body: {
+          userId: session.user.id,
+          permissions: {
+            exercise: ["view-all"],
+          },
+        },
+      });
+
+      if (canViewAll?.success) {
+        // Admin/maintainer can see all statuses
+        allowedStatuses = ['draft', 'submitted', 'active', 'archived'];
+      } else if (includeUserDrafts === 'true') {
+        // Regular users can see their own drafts + active exercises
+        allowedStatuses = ['active', 'draft'];
+      }
+    }
+
+    // Filter status based on permissions
+    const requestedStatus = status as string;
+    let finalStatus = requestedStatus;
+
+    if (!allowedStatuses.includes(requestedStatus)) {
+      finalStatus = 'active'; // Fallback to active
+    }
 
     if (query || tagsArray.length > 0) {
       console.log('Calling searchExercises...');
@@ -29,14 +73,21 @@ export default async function handler(
         query as string, 
         tagsArray,
         pageNum,
-        limitNum
+        limitNum,
+        {
+          status: finalStatus,
+          userId: (includeUserDrafts === 'true' && session?.user) ? session.user.id : undefined,
+        }
       );
       
       console.log('Search result:', { exerciseCount: result.exercises.length, totalCount: result.totalCount });
       return res.status(200).json(result);
     } else {
       console.log('Calling getAllExercises...');
-      const result = await getAllExercises(pageNum, limitNum);
+      const result = await getAllExercises(pageNum, limitNum, {
+        status: finalStatus,
+        userId: (includeUserDrafts === 'true' && session?.user) ? session.user.id : undefined,
+      });
       console.log('GetAll result:', { exerciseCount: result.exercises.length, totalCount: result.totalCount });
       return res.status(200).json(result);
     }

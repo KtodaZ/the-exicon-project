@@ -3,7 +3,6 @@ import { ExerciseListItem } from "@/lib/models/exercise";
 import { TagBadge } from "@/components/ui/tag-badge";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { VideoPlayer } from './video-player';
 import Image from "next/image";
 import { ExercisePlaceholder } from './ui/exercise-placeholder';
 
@@ -16,9 +15,10 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardProps) {
   const { name, description, tags, urlSlug, difficulty, video_url, image_url } = exercise;
   
-  // Check if this is one of the placeholder image URLs
-  const isPlaceholderImage = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
-                            image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
+  // Check if this is one of the placeholder image URLs or if image_url is null/empty
+  const shouldShowPlaceholder = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
+                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png' ||
+                               !image_url;
   
   // Function to determine difficulty level text and color
   const getDifficultyInfo = (difficultyValue: number) => {
@@ -57,22 +57,16 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
           </CardHeader>
           <CardContent className="pb-4">
             <div className="aspect-video bg-gray-200 dark:bg-gray-800 rounded-md mb-5 flex items-center justify-center overflow-hidden">
-              {isPlaceholderImage ? (
+              {shouldShowPlaceholder ? (
                 <ExercisePlaceholder title={name} tags={tags} />
               ) : image_url ? (
-                <div className="relative w-full h-full">
-                  <Image 
-                    src={image_url} 
-                    alt={name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover"
-                  />
-                </div>
-              ) : video_url ? (
-                <div className="w-full h-full pointer-events-none">
-                  <VideoPlayer src={video_url} />
-                </div>
+                <Image
+                  src={image_url}
+                  alt={name}
+                  className="object-cover w-full h-full"
+                  width={280}
+                  height={158}
+                />
               ) : (
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 

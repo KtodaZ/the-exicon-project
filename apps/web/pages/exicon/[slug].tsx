@@ -72,14 +72,16 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
     video_url, 
     image_url,
     author, 
+    authorName,
     similarExercises 
   } = exercise;
 
   const exerciseCount = getExerciseCount();
   
-  // Check if this is one of the placeholder image URLs
-  const isPlaceholderImage = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
-                            image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
+  // Check if this is one of the placeholder image URLs or null
+  const shouldShowPlaceholder = !image_url || 
+                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
+                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
 
   return (
     <>
@@ -121,7 +123,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               <div className="max-w-[800px] mx-auto bg-gray-200 dark:bg-gray-800 rounded-lg aspect-video flex items-center justify-center overflow-hidden shadow-lg">
                 {video_url ? (
                   <VideoPlayer src={video_url} posterImage={image_url || undefined} />
-                ) : isPlaceholderImage ? (
+                ) : shouldShowPlaceholder ? (
                   <ExercisePlaceholderLarge title={name} tags={tags} />
                 ) : image_url ? (
                   <Image
@@ -151,10 +153,10 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               </div>
               
               {/* Author */}
-              {author && author !== 'N/A' && (
+              {(authorName || (author && author !== 'N/A')) && (
                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
                   <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Author:</span> {author}
+                    <span className="font-medium">Author:</span> {authorName || author}
                   </p>
                 </div>
               )}
