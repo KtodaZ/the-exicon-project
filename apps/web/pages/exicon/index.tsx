@@ -82,18 +82,18 @@ export default function ExiconPage({
   // Scroll detection for minified filter view
   useEffect(() => {
     let ticking = false;
-    
+
     const handleScroll = () => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrolled = window.scrollY > 150;
           setIsScrolled(scrolled);
-          
+
           // Auto-collapse categories when user starts scrolling
           if (scrolled && showAllCategories) {
             setShowAllCategories(false);
           }
-          
+
           ticking = false;
         });
         ticking = true;
@@ -276,7 +276,7 @@ export default function ExiconPage({
                   filterPills={isScrolled && (activeTags.length > 0 || searchQuery) ? (
                     <div className="flex items-center gap-2 text-xs">
                       {searchQuery && (
-                        <button 
+                        <button
                           onClick={() => setSearchInput('')}
                           className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full flex items-center gap-1 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
                         >
@@ -285,8 +285,8 @@ export default function ExiconPage({
                         </button>
                       )}
                       {activeTags.slice(0, 3).map(tag => (
-                        <button 
-                          key={tag} 
+                        <button
+                          key={tag}
                           onClick={() => toggleTag(tag)}
                           className="px-2 py-1 bg-brand-red text-white rounded-full flex items-center gap-1 hover:bg-red-700 transition-colors"
                         >
@@ -335,8 +335,8 @@ export default function ExiconPage({
                       key={tag}
                       onClick={() => toggleTag(tag)}
                       className={`text-lg transition-colors ${activeTags.includes(tag)
-                          ? 'text-brand-red font-medium'
-                          : 'text-gray-700 dark:text-gray-300 hover:text-brand-red'
+                        ? 'text-brand-red font-medium'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-brand-red'
                         }`}
                     >
                       {label}
@@ -435,7 +435,14 @@ export default function ExiconPage({
               </span>
             </div>
 
-            {exercises.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Spinner variant="red" />
+                <span className="ml-2 text-gray-600 dark:text-gray-400">
+                  Loading exercises...
+                </span>
+              </div>
+            ) : exercises.length > 0 ? (
               <>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 mb-8">
                   {exercises.map((exercise: ExerciseListItem) => (

@@ -127,8 +127,8 @@ export const searchConfig: SearchConfig = {
   },
 
   debug: {
-    logQueries: true,          // Set to true when debugging search issues
-    logScores: true,           // Set to true to see relevance scores
+    logQueries: false,          // Set to true when debugging search issues
+    logScores: false,           // Set to true to see relevance scores
     enableFallback: true,       // Safe fallback if Atlas Search fails
   },
 };
