@@ -38,3 +38,5 @@ yarn-error.log*
 *.pem
 
 packages/exicon-fetcher/data/
+mongodb_backup/
+mongodb-database*

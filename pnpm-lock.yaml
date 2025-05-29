@@ -173,6 +173,37 @@ importers:
         specifier: ^5.8.3
         version: 5.8.3
 
+  packages/data-cleanup:
+    dependencies:
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
+      fs-extra:
+        specifier: ^11.1.1
+        version: 11.3.0
+      mongodb:
+        specifier: ^6.16.0
+        version: 6.16.0(@aws-sdk/credential-providers@3.817.0)(socks@2.8.4)
+      openai:
+        specifier: ^4.100.0
+        version: 4.103.0(zod@3.25.34)
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.0.1
+    devDependencies:
+      '@types/fs-extra':
+        specifier: ^11.0.4
+        version: 11.0.4
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.15.24
+      eslint:
+        specifier: ^9.26.0
+        version: 9.27.0(jiti@2.4.2)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.8.3
+
   packages/exicon-fetcher:
     dependencies:
       ai:

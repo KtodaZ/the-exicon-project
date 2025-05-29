@@ -1,0 +1,25 @@
+{
+  "name": "data-cleanup",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "rimraf ./dist && tsc",
+    "cleanup": "node dist/cleanup.js",
+    "bulk-cleanup": "node dist/bulk-cleanup.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0",
+    "mongodb": "^6.16.0",
+    "openai": "^4.100.0",
+    "fs-extra": "^11.1.1",
+    "rimraf": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.26.0",
+    "typescript": "^5.8.2"
+  }
+}

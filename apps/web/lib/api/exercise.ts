@@ -1,6 +1,7 @@
 import { getDatabase } from '@/lib/mongodb';
 import { Exercise, ExerciseListItem, ExerciseDetail, ExerciseStatus } from '@/lib/models/exercise';
 import { cache, cacheKeys, cacheTTL } from '@/lib/redis';
+import { searchConfig } from '@/lib/config/search';
 import { ObjectId } from 'mongodb';
 
 // Utility function to safely convert string to ObjectId
@@ -353,6 +354,411 @@ export async function getSimilarExercises(
   return cleanedExercises as ExerciseListItem[];
 }
 
+// Atlas Search implementation
+export async function searchExercisesWithAtlas(
+  query: string,
+  tags: string[] = [],
+  page: number = 1,
+  limit: number = 12,
+  options?: {
+    status?: string;
+    userId?: string;
+    fuzzy?: boolean;
+  }
+): Promise<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }> {
+  const { status = 'active', userId, fuzzy = searchConfig.fuzzy.enabled } = options || {};
+  const cacheKey = `atlas_search_${query}_${tags.join(',')}_${page}_${limit}_${status}_${userId || 'public'}_${fuzzy}`;
+  
+  if (searchConfig.debug.logQueries) {
+    console.log(`🔍 searchExercisesWithAtlas called - query: "${query}", tags: [${tags.join(', ')}], page: ${page}, limit: ${limit}, status: ${status}, fuzzy: ${fuzzy}`);
+  }
+  
+  // Check cache only if caching is enabled
+  if (searchConfig.performance.enableCaching) {
+    const cached = await cache.get<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }>(cacheKey);
+    
+    if (cached) {
+      if (searchConfig.debug.logQueries) {
+        console.log(`✅ searchExercisesWithAtlas using cached result with ${cached.exercises.length} exercises`);
+      }
+      return cached;
+    }
+  }
+
+  if (searchConfig.debug.logQueries) {
+    console.log('📊 searchExercisesWithAtlas cache miss - fetching from MongoDB with Atlas Search...');
+  }
+  const db = await getDatabase();
+  const collection = db.collection('exercises');
+  
+  const skip = (page - 1) * limit;
+  
+  // Build Atlas Search pipeline - simplified approach
+  let searchStage: any;
+
+  if (query.trim() || tags.length > 0) {
+    // Build compound search for query + tags combination
+    const mustClauses: any[] = [];
+    const shouldClauses: any[] = [];
+    
+    // Add text search if query provided
+    if (query.trim()) {
+      shouldClauses.push(
+        {
+          text: {
+            query: query.trim(),
+            path: ["name"],
+            score: { boost: { value: searchConfig.fieldWeights.name } }
+          }
+        },
+        {
+          text: {
+            query: query.trim(),
+            path: ["description"],
+            score: { boost: { value: searchConfig.fieldWeights.description } }
+          }
+        },
+        {
+          text: {
+            query: query.trim(),
+            path: ["text"],
+            fuzzy: fuzzy ? { 
+              maxEdits: query.trim().length <= 5 
+                ? searchConfig.fuzzy.maxEdits.short 
+                : searchConfig.fuzzy.maxEdits.long,
+              prefixLength: searchConfig.fuzzy.prefixLength,
+              maxExpansions: searchConfig.fuzzy.maxExpansions
+            } : undefined,
+            score: { boost: { value: searchConfig.fieldWeights.text } }
+          }
+        },
+        {
+          text: {
+            query: query.trim(),
+            path: ["tags"],  // Only search tags array, not categories string
+            score: { boost: { value: searchConfig.fieldWeights.tags } }
+          }
+        },
+        {
+          text: {
+            query: query.trim(),
+            path: ["aliases.name"],
+            score: { boost: { value: searchConfig.fieldWeights.aliases } }
+          }
+        }
+      );
+    }
+    
+    // Add tag filtering as REQUIRED when tags provided
+    if (tags.length > 0) {
+      mustClauses.push({
+        text: {
+          query: tags.join(" "),
+          path: ["tags"],  // Only filter by tags array, not categories string
+          score: { boost: { value: searchConfig.fieldWeights.tags } }
+        }
+      });
+    }
+    
+    const compoundQuery: any = {};
+    
+    if (mustClauses.length > 0) {
+      compoundQuery.must = mustClauses;
+    }
+    
+    if (shouldClauses.length > 0) {
+      compoundQuery.should = shouldClauses;
+      compoundQuery.minimumShouldMatch = searchConfig.behavior.minimumShouldMatch;
+    }
+    
+    searchStage = {
+      $search: {
+        index: "default",
+        compound: compoundQuery
+      }
+    };
+  } else {
+    // No search criteria - use regular MongoDB query
+    const filter: any = {};
+    if (status === 'draft' && userId) {
+      filter.status = 'draft';
+      filter.submittedBy = userId;
+    } else if (status === 'active') {
+      filter.status = 'active';
+    } else if (status && ['submitted', 'archived'].includes(status)) {
+      filter.status = status;
+    } else {
+      filter.status = 'active';
+    }
+
+    const exercises = await collection
+      .find(filter)
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .project<ExerciseListItem>({
+        _id: 1,
+        name: 1,
+        description: 1,
+        tags: 1,
+        urlSlug: 1,
+        difficulty: 1,
+        video_url: 1,
+        image_url: 1,
+        status: 1,
+        submittedBy: 1,
+        submittedAt: 1,
+      })
+      .toArray();
+
+    const totalCount = await collection.countDocuments(filter);
+    const result = { exercises, totalCount };
+    await cache.set(cacheKey, result, cacheTTL.searchResults);
+    return result;
+  }
+
+  const pipeline = [
+    searchStage,
+    {
+      $addFields: {
+        score: { $meta: "searchScore" }
+      }
+    }
+  ];
+
+  // Add score threshold filtering if configured
+  if (searchConfig.behavior.scoreThreshold !== undefined) {
+    pipeline.push({
+      $match: {
+        score: { $gte: searchConfig.behavior.scoreThreshold }
+      }
+    });
+  }
+
+  // Add status filtering after search
+  if (status === 'draft' && userId) {
+    pipeline.push({
+      $match: {
+        status: 'draft',
+        submittedBy: userId
+      }
+    });
+  } else if (status === 'active') {
+    pipeline.push({
+      $match: {
+        status: 'active'
+      }
+    });
+  } else if (status && ['submitted', 'archived'].includes(status)) {
+    pipeline.push({
+      $match: {
+        status: status
+      }
+    });
+  } else {
+    pipeline.push({
+      $match: {
+        status: 'active'
+      }
+    });
+  }
+
+  pipeline.push(
+    {
+      $skip: skip
+    },
+    {
+      $limit: limit
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        tags: 1,
+        urlSlug: 1,
+        difficulty: 1,
+        video_url: 1,
+        image_url: 1,
+        status: 1,
+        submittedBy: 1,
+        submittedAt: 1,
+        score: 1
+      }
+    }
+  );
+
+  if (searchConfig.debug.logQueries) {
+    console.log('Atlas Search pipeline:', JSON.stringify(pipeline, null, 2));
+  }
+
+  try {
+    const exercises = await collection
+      .aggregate(pipeline)
+      .toArray() as (ExerciseListItem & { score: number })[];
+
+    // Get total count with separate aggregation
+    const countPipeline = [searchStage];
+    
+    // Add same status filtering for count
+    if (status === 'draft' && userId) {
+      countPipeline.push({
+        $match: {
+          status: 'draft',
+          submittedBy: userId
+        }
+      });
+    } else if (status === 'active') {
+      countPipeline.push({
+        $match: {
+          status: 'active'
+        }
+      });
+    } else if (status && ['submitted', 'archived'].includes(status)) {
+      countPipeline.push({
+        $match: {
+          status: status
+        }
+      });
+    } else {
+      countPipeline.push({
+        $match: {
+          status: 'active'
+        }
+      });
+    }
+    
+    countPipeline.push({
+      $count: "total"
+    });
+
+    const countResult = await collection
+      .aggregate(countPipeline)
+      .toArray();
+
+    const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+
+    if (searchConfig.debug.logScores) {
+      console.log(`Found ${exercises.length} exercises with Atlas Search (total: ${totalCount})`);
+      if (exercises.length > 0) {
+        console.log('Top results with scores:', exercises.slice(0, 3).map(e => `${e.name} (score: ${e.score?.toFixed(2)})`));
+      }
+    }
+
+    const result = { exercises, totalCount };
+    
+    // Only cache if caching is enabled
+    if (searchConfig.performance.enableCaching) {
+      if (searchConfig.debug.logQueries) {
+        console.log(`💾 Caching Atlas Search result (${exercises.length} exercises, ${totalCount} total)`);
+      }
+      await cache.set(cacheKey, result, searchConfig.performance.cacheSeconds);
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error in searchExercisesWithAtlas:', error);
+    // Fallback to regex search if Atlas Search fails
+    if (searchConfig.debug.enableFallback) {
+      console.log('Falling back to regex search...');
+      return searchExercises(query, tags, page, limit, options);
+    }
+    throw error;
+  }
+}
+
+// Atlas Search autocomplete implementation
+export async function getSearchSuggestions(
+  query: string,
+  limit: number = searchConfig.autocomplete.maxSuggestions
+): Promise<string[]> {
+  if (!searchConfig.autocomplete.enabled || 
+      !query.trim() || 
+      query.length < searchConfig.autocomplete.minQueryLength) {
+    return [];
+  }
+
+  const cacheKey = `suggestions_${query.trim()}_${limit}`;
+  console.log(`🔍 getSearchSuggestions called - query: "${query}", limit: ${limit}`);
+  
+  // Check cache only if caching is enabled
+  if (searchConfig.performance.enableCaching) {
+    const cached = await cache.get<string[]>(cacheKey);
+    
+    if (cached) {
+      if (searchConfig.debug.logQueries) {
+        console.log(`✅ getSearchSuggestions using cached result with ${cached.length} suggestions`);
+      }
+      return cached;
+    }
+  }
+
+  console.log('📊 getSearchSuggestions cache miss - fetching from MongoDB with Atlas Search...');
+  const db = await getDatabase();
+  const collection = db.collection('exercises');
+
+  try {
+    const pipeline = [
+      {
+        $search: {
+          index: "default",
+          compound: {
+            must: [
+              {
+                autocomplete: {
+                  query: query.trim(),
+                  path: "name",
+                  fuzzy: { 
+                    maxEdits: searchConfig.autocomplete.maxEdits,
+                    prefixLength: searchConfig.fuzzy.prefixLength
+                  }
+                }
+              }
+            ],
+            filter: [
+              {
+                equals: { path: "status", value: "active" }
+              }
+            ]
+          }
+        }
+      },
+      {
+        $limit: limit
+      },
+      {
+        $project: {
+          name: 1,
+          score: { $meta: "searchScore" }
+        }
+      }
+    ];
+
+    const results = await collection
+      .aggregate(pipeline)
+      .toArray();
+
+    const suggestions = results.map(r => r.name);
+    
+    if (searchConfig.debug.logScores) {
+      console.log(`Found ${suggestions.length} search suggestions`);
+    }
+    
+    // Only cache if caching is enabled
+    if (searchConfig.performance.enableCaching) {
+      if (searchConfig.debug.logQueries) {
+        console.log(`💾 Caching search suggestions result`);
+      }
+      await cache.set(cacheKey, suggestions, searchConfig.performance.cacheSeconds);
+    }
+
+    return suggestions;
+  } catch (error) {
+    console.error('Error in getSearchSuggestions:', error);
+    return [];
+  }
+}
+
 // Search exercises by query and optional tags
 export async function searchExercises(
   query: string,
@@ -491,6 +897,79 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
   await cache.set(cacheKey, result, cacheTTL.popularTags);
   
   return result;
+}
+
+// Debug Atlas Search function
+export async function debugAtlasSearch(): Promise<any> {
+  const db = await getDatabase();
+  const collection = db.collection('exercises');
+  
+  try {
+    // Check if we have any active exercises
+    const activeCount = await collection.countDocuments({ status: 'active' });
+    console.log('Active exercises count:', activeCount);
+    
+    // Get a sample active exercise
+    const sampleExercise = await collection.findOne({ status: 'active' });
+    console.log('Sample active exercise:', sampleExercise);
+    
+    // Try a simple Atlas Search without filters
+    const simpleSearchPipeline = [
+      {
+        $search: {
+          index: "default",
+          text: {
+            query: "burpee",
+            path: ["name", "description", "text"]
+          }
+        }
+      },
+      {
+        $limit: 5
+      },
+      {
+        $project: {
+          name: 1,
+          status: 1,
+          score: { $meta: "searchScore" }
+        }
+      }
+    ];
+    
+    console.log('Simple search pipeline:', JSON.stringify(simpleSearchPipeline, null, 2));
+    const simpleResults = await collection.aggregate(simpleSearchPipeline).toArray();
+    console.log('Simple search results:', simpleResults);
+    
+    // Try regex search for comparison
+    const regexResults = await collection.find({
+      $and: [
+        { status: 'active' },
+        {
+          $or: [
+            { name: { $regex: /burpee/i } },
+            { description: { $regex: /burpee/i } },
+            { text: { $regex: /burpee/i } }
+          ]
+        }
+      ]
+    }).limit(5).toArray();
+    
+    console.log('Regex search results count:', regexResults.length);
+    if (regexResults.length > 0) {
+      console.log('First regex result:', regexResults[0].name);
+    }
+    
+    return {
+      activeCount,
+      sampleExercise: sampleExercise ? { name: sampleExercise.name, status: sampleExercise.status } : null,
+      simpleSearchResults: simpleResults.length,
+      regexResults: regexResults.length,
+      regexResultNames: regexResults.map(r => r.name)
+    };
+  } catch (error) {
+    console.error('Error in debugAtlasSearch:', error);
+    return { error: error.message };
+  }
 }
 
 // Add diagnostic function

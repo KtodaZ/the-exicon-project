@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAllExercises, searchExercises } from '@/lib/api/exercise';
+import { getAllExercises, searchExercises, searchExercisesWithAtlas } from '@/lib/api/exercise';
 import { auth } from '@/lib/auth';
 
 export default async function handler(
@@ -68,8 +68,8 @@ export default async function handler(
     }
 
     if (query || tagsArray.length > 0) {
-      console.log('Calling searchExercises...');
-      const result = await searchExercises(
+      console.log('Calling searchExercisesWithAtlas...');
+      const result = await searchExercisesWithAtlas(
         query as string, 
         tagsArray,
         pageNum,
@@ -77,6 +77,7 @@ export default async function handler(
         {
           status: finalStatus,
           userId: (includeUserDrafts === 'true' && session?.user) ? session.user.id : undefined,
+          fuzzy: true,
         }
       );
       
