@@ -968,7 +968,7 @@ export async function debugAtlasSearch(): Promise<any> {
     };
   } catch (error) {
     console.error('Error in debugAtlasSearch:', error);
-    return { error: error.message };
+    return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 

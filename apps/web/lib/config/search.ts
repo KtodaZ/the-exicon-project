@@ -122,7 +122,7 @@ export const searchConfig: SearchConfig = {
   },
 
   performance: {
-    enableCaching: false,        // Cache results for better performance
+    enableCaching: true,        // Cache results for better performance
     cacheSeconds: 300,          // Cache for 5 minutes
   },
 
