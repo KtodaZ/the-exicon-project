@@ -18,7 +18,8 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
   ({ className, onSearch, buttonText = "Search", buttonVariant = "red", showButton = true, iconSize = 4, rotatingPlaceholders, filterPills, ...props }, ref) => {
     const [value, setValue] = React.useState(props.defaultValue || "");
     const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = React.useState(0);
-    
+    const [isFirstShow, setIsFirstShow] = React.useState(true);
+
     // Update internal state when defaultValue changes
     React.useEffect(() => {
       setValue(props.defaultValue || "");
@@ -28,13 +29,26 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
     React.useEffect(() => {
       if (rotatingPlaceholders && rotatingPlaceholders.length > 1) {
         const interval = setInterval(() => {
-          setCurrentPlaceholderIndex((prev) => (prev + 1) % rotatingPlaceholders.length);
+          setCurrentPlaceholderIndex((prev) => {
+            // If this is the first rotation, always show the first placeholder first
+            if (isFirstShow) {
+              setIsFirstShow(false);
+              return 0;
+            }
+
+            // After the first show, randomly select from all placeholders except the current one
+            let newIndex;
+            do {
+              newIndex = Math.floor(Math.random() * rotatingPlaceholders.length);
+            } while (newIndex === prev && rotatingPlaceholders.length > 1);
+            return newIndex;
+          });
         }, 3000); // Change every 3 seconds
-        
+
         return () => clearInterval(interval);
       }
-    }, [rotatingPlaceholders]);
-    
+    }, [rotatingPlaceholders, isFirstShow]);
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (onSearch) {
@@ -71,18 +85,18 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
             onChange={handleChange}
             placeholder={!rotatingPlaceholders && !filterPills ? props.placeholder : ''}
           />
-          
+
           {/* Filter pills inside search bar when no input */}
           {filterPills && !value && (
             <div className="absolute right-4 top-0 h-12 flex items-center pointer-events-auto">
               {filterPills}
             </div>
           )}
-          
+
           {/* Custom animated placeholder */}
           {rotatingPlaceholders && !value && !filterPills && (
             <div className="absolute left-12 top-0 h-12 flex items-center pointer-events-none overflow-hidden">
-              <div 
+              <div
                 key={currentPlaceholderIndex}
                 className="text-lg text-gray-500 animate-billboard-slide"
                 style={{
@@ -96,8 +110,8 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
         </div>
         <Search className={`absolute left-4 top-3.5 h-5 w-5 text-gray-500`} />
         {showButton && (
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="absolute right-1 top-1 h-7 px-2 rounded-md"
             variant={buttonVariant}
           >

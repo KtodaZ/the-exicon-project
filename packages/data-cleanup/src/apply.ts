@@ -1,24 +1,5 @@
-import { CleanupEngine } from './cleanup-engine.js';
+// This functionality has been moved to bulk-cleanup.ts
+// This file is kept to avoid build errors but is not used
 
-async function main() {
-  const engine = new CleanupEngine();
-  
-  try {
-    await engine.initialize();
-    
-    console.log('Applying approved proposals...');
-    const appliedCount = await engine.applyApprovedProposals();
-    
-    console.log(`✓ Applied ${appliedCount} approved changes to the database.`);
-    
-  } catch (error) {
-    console.error('Apply failed:', error);
-    process.exit(1);
-  } finally {
-    await engine.cleanup();
-  }
-}
-
-if (require.main === module) {
-  main();
-}
+console.log('apply.ts is deprecated - use bulk-cleanup.ts instead');
+export {};

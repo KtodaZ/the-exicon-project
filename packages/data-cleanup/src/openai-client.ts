@@ -52,16 +52,31 @@ If no improvement is needed, return:
   "confidence": 1.0
 }`;
 
-      const userPrompt = cleanupConfig.field === 'description' && sourceValue
-        ? `Exercise: "${exercise.name}"
+      let userPrompt: string;
+      
+      if (cleanupConfig.field === 'description' && sourceValue) {
+        userPrompt = `Exercise: "${exercise.name}"
 Source text to summarize: "${contentToProcess}"
 Current description: "${currentValue || 'None'}"
 
-Please generate a concise description from the source text:`
-        : `Exercise: "${exercise.name}"
+Please generate a concise description from the source text:`;
+      } else if (cleanupConfig.field === 'tags') {
+        userPrompt = `Exercise: "${exercise.name}"
+Exercise text: "${contentToProcess}"
+Current tags: ${currentValue ? JSON.stringify(currentValue) : '[]'}
+
+Please analyze the exercise and generate appropriate tags:`;
+      } else if (cleanupConfig.field === 'text') {
+        userPrompt = `Exercise: "${exercise.name}"
+Current text content: "${contentToProcess}"
+
+Please improve the formatting of this text while preserving all original content:`;
+      } else {
+        userPrompt = `Exercise: "${exercise.name}"
 Current ${cleanupConfig.field}: "${contentToProcess}"
 
 Please review and improve if needed:`;
+      }
 
       const response = await this.client.chat.completions.create({
         model: cleanupConfig.model || config.openai.defaultModel,

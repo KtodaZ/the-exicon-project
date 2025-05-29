@@ -31,10 +31,17 @@ export class CleanupEngine {
     console.log(`Already processed: ${stats.totalProcessed} exercises`);
     console.log(`Last run: ${stats.lastRun}`);
     
-    // For description generation, we need exercises with 'text' field but without good descriptions
-    const exercises = cleanupConfig.field === 'description' 
-      ? await this.db.getExercisesForDescriptionGeneration(batchSize, this.tracker.getProcessedIds())
-      : await this.db.getExercisesForCleanup(cleanupConfig.field, batchSize);
+    // Get exercises based on cleanup type
+    let exercises: Exercise[];
+    if (cleanupConfig.field === 'description') {
+      exercises = await this.db.getExercisesForDescriptionGeneration(batchSize, this.tracker.getProcessedIds());
+    } else if (cleanupConfig.field === 'tags') {
+      exercises = await this.db.getExercisesForTagsGeneration(batchSize, this.tracker.getProcessedIds());
+    } else if (cleanupConfig.field === 'text') {
+      exercises = await this.db.getExercisesForTextFormatting(batchSize, this.tracker.getProcessedIds());
+    } else {
+      exercises = await this.db.getExercisesForCleanup(cleanupConfig.field, batchSize);
+    }
     
     console.log(`Processing ${exercises.length} exercises for field: ${cleanupConfig.field}`);
     
@@ -139,14 +146,12 @@ export class CleanupEngine {
         status: 'pending'
       };
 
-      if (config.cleanup.reviewRequired && !config.cleanup.autoApprove) {
-        await this.db.saveProposal(proposal);
-      } else if (config.cleanup.autoApprove && proposal.confidence >= config.cleanup.autoApproveMinConfidence) {
-        // Auto-approve high confidence proposals
+      if (config.cleanup.autoApprove) {
+        // Auto-apply all proposals when in auto mode
         proposal.status = 'approved';
         await this.db.saveProposal(proposal);
         
-        // Apply immediately if auto-approving
+        // Apply immediately to MongoDB
         const updateQuery: any = {};
         updateQuery[cleanupConfig.field] = proposal.proposedValue;
         
@@ -156,9 +161,9 @@ export class CleanupEngine {
           { $set: updateQuery }
         );
         
-        console.log(`  → Auto-applied (confidence: ${(proposal.confidence * 100).toFixed(1)}%)`);
+        console.log(`  → Applied to MongoDB (confidence: ${(proposal.confidence * 100).toFixed(1)}%)`);
       } else {
-        // Save for manual review if below confidence threshold
+        // Save for manual review
         await this.db.saveProposal(proposal);
         console.log(`  → Saved for review (confidence: ${(proposal.confidence * 100).toFixed(1)}%)`);
       }

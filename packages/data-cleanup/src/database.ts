@@ -52,8 +52,32 @@ export class DatabaseManager {
   async getExercisesForDescriptionGeneration(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
     
-    // Get exercises that have 'text' field but either no description or poor description
-    // AND haven't been processed yet
+    // Get ALL exercises that have 'text' field and haven't been processed yet
+    const query = {
+      $and: [
+        { 
+          _id: { $nin: excludeIds } // Exclude already processed exercises
+        },
+        { 
+          text: { 
+            $exists: true, 
+            $nin: [null, '']
+          } 
+        } // Must have text content
+        // Removed description restrictions - process ALL exercises with text
+      ]
+    };
+    
+    return await collection
+      .find(query as any)
+      .limit(limit)
+      .toArray();
+  }
+
+  async getExercisesForTagsGeneration(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
+    const collection = this.getExercisesCollection();
+    
+    // Get exercises that have missing tags
     const query = {
       $and: [
         { 
@@ -67,12 +91,34 @@ export class DatabaseManager {
         }, // Must have text content
         {
           $or: [
-            { description: { $exists: false } }, // No description field
-            { description: { $eq: null } }, // Null description
-            { description: { $eq: '' } }, // Empty description
-            { description: { $regex: '^.{0,20}$' } } // Very short description (less than 20 chars)
+            { tags: { $size: 0 } }, // Empty tags array
+            { tags: null } // Null tags
           ]
         }
+      ]
+    };
+    
+    return await collection
+      .find(query as any)
+      .limit(limit)
+      .toArray();
+  }
+
+  async getExercisesForTextFormatting(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
+    const collection = this.getExercisesCollection();
+    
+    // Get ALL exercises that have text content to format
+    const query = {
+      $and: [
+        { 
+          _id: { $nin: excludeIds } // Exclude already processed exercises
+        },
+        { 
+          text: { 
+            $exists: true, 
+            $nin: [null, '']
+          } 
+        } // Must have text content
       ]
     };
     

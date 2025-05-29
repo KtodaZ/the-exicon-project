@@ -7,7 +7,7 @@ export const WORKOUT_TAGS = {
   UPPER_BODY: 'upper-body',
   ROUTINE: 'routine',
   ENDURANCE: 'endurance',
-  
+
   // Exercise types
   PLANK: 'plank',
   PLYOMETRICS: 'plyometrics',
@@ -19,21 +19,21 @@ export const WORKOUT_TAGS = {
   JUMP: 'jump',
   SPRINTS: 'sprints',
   FLEXIBILITY: 'flexibility',
-  
+
   // Equipment/Props
   COUPON: 'coupon',
   PARTNER: 'partner',
   PULL_UP_BAR: 'pull-up-bar',
   TIMER: 'timer',
   MUSIC: 'music',
-  
+
   // Body parts
   TRICEPS: 'triceps',
   SHOULDERS: 'shoulders',
   CHEST: 'chest',
   GLUTES: 'glutes',
   CALVES: 'calves',
-  
+
   // Locations/Environment
   FIELD: 'field',
   BENCH: 'bench',
@@ -43,8 +43,8 @@ export const WORKOUT_TAGS = {
   TRACK: 'track',
   PLAYGROUND_SWING: 'playground-swing',
   PLAYGROUND: 'playground',
-  AQUATICS: 'aquatics',
-  
+  WATER: 'water',
+
   // Special categories
   GAME: 'game',
 } as const;
@@ -93,7 +93,7 @@ const TAG_IMAGE_MAP: Record<WorkoutTag, string> = {
   [WORKOUT_TAGS.HILL]: '/categories/run.png',
   [WORKOUT_TAGS.PLAYGROUND_SWING]: '/categories/full-body.png',
   [WORKOUT_TAGS.PLAYGROUND]: '/categories/full-body.png',
-  [WORKOUT_TAGS.AQUATICS]: '/categories/full-body.png',
+  [WORKOUT_TAGS.WATER]: '/categories/full-body.png',
   [WORKOUT_TAGS.FIELD]: '/categories/full-body.png',
 
   // Body part mappings (low priority)
@@ -115,7 +115,7 @@ export function getTagImage(tag: WorkoutTag): string {
 // Function to get the best tag from an array of tags (prioritizing more specific tags)
 export function getBestTag(tags: string[]): WorkoutTag {
   if (tags.length === 0) return WORKOUT_TAGS.FULL_BODY;
-  
+
   // Priority order: unique specific tags first, then general ones
   const priorityTags = [
     WORKOUT_TAGS.STAIRS, WORKOUT_TAGS.CRAWL, WORKOUT_TAGS.PLANK, WORKOUT_TAGS.MUSIC,
@@ -125,14 +125,14 @@ export function getBestTag(tags: string[]): WorkoutTag {
     WORKOUT_TAGS.MERKIN, WORKOUT_TAGS.BURPEE, WORKOUT_TAGS.TRACK, WORKOUT_TAGS.PLYOMETRICS, WORKOUT_TAGS.CORE,
     WORKOUT_TAGS.UPPER_BODY, WORKOUT_TAGS.LOWER_BODY
   ];
-  
+
   // Find the first priority tag that exists in the exercise tags
   for (const priorityTag of priorityTags) {
     if (tags.includes(priorityTag)) {
       return priorityTag;
     }
   }
-  
+
   // If no priority tag found, use the first valid tag or default to full-body
   const firstValidTag = tags.find(tag => isValidWorkoutTag(tag)) as WorkoutTag;
   return firstValidTag || WORKOUT_TAGS.FULL_BODY;
@@ -154,7 +154,7 @@ export function getTagImageSafe(tag: string): string {
 }
 
 // Type for workout tag categories
-export type WorkoutTagCategory = 
+export type WorkoutTagCategory =
   | 'fundamentals'
   | 'exercises'
   | 'equipment'
@@ -200,7 +200,7 @@ export const WORKOUT_TAG_CATEGORIES: Record<WorkoutTagCategory, WorkoutTag[]> = 
     WORKOUT_TAGS.TRICEPS,
   ],
   'locations': [
-    WORKOUT_TAGS.AQUATICS,
+    WORKOUT_TAGS.WATER,
     WORKOUT_TAGS.FIELD,
     WORKOUT_TAGS.HILL,
     WORKOUT_TAGS.PARKING_LOT,

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Input } from './input';
 import { Button } from './button';
 import { Badge } from './badge';
-import { titleCase } from '@/lib/utils';
+import { WORKOUT_TAG_LIST, getTagDisplayName, type WorkoutTag } from '@/types/workout-tags';
 
 interface TagsAutocompleteProps {
   selectedTags: string[];
@@ -18,34 +18,16 @@ export function TagsAutocomplete({
   className 
 }: TagsAutocompleteProps) {
   const [inputValue, setInputValue] = useState('');
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [filteredTags, setFilteredTags] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [loading, setLoading] = useState(true);
+  
+  // Use preset tags from workout-tags instead of API
+  const availableTags = WORKOUT_TAG_LIST;
   
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch available tags on component mount
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const response = await fetch('/api/tags');
-        const data = await response.json();
-        
-        if (data.success) {
-          setAvailableTags(data.tags || []);
-        }
-      } catch (error) {
-        console.error('Error fetching tags:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTags();
-  }, []);
 
   // Filter tags based on input
   useEffect(() => {
@@ -59,7 +41,7 @@ export function TagsAutocomplete({
       setFilteredTags(filtered);
     }
     setHighlightedIndex(-1);
-  }, [inputValue, availableTags, selectedTags]);
+  }, [inputValue, selectedTags]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,10 +69,11 @@ export function TagsAutocomplete({
     inputRef.current?.focus();
   };
 
-  // Handle manual tag addition (when user types and presses Enter)
-  const handleAddCustomTag = () => {
+  // Handle preset tag addition only
+  const handleAddPresetTag = () => {
     const trimmedTag = inputValue.trim().toLowerCase();
-    if (trimmedTag && !selectedTags.includes(trimmedTag)) {
+    // Only allow preset tags
+    if (trimmedTag && availableTags.includes(trimmedTag as WorkoutTag) && !selectedTags.includes(trimmedTag)) {
       onTagsChange([...selectedTags, trimmedTag]);
       setInputValue('');
       setShowDropdown(false);
@@ -107,7 +90,7 @@ export function TagsAutocomplete({
     if (!showDropdown || filteredTags.length === 0) {
       if (e.key === 'Enter') {
         e.preventDefault();
-        handleAddCustomTag();
+        handleAddPresetTag();
       }
       return;
     }
@@ -130,7 +113,7 @@ export function TagsAutocomplete({
         if (highlightedIndex >= 0 && highlightedIndex < filteredTags.length) {
           handleTagSelect(filteredTags[highlightedIndex]);
         } else {
-          handleAddCustomTag();
+          handleAddPresetTag();
         }
         break;
       case 'Escape':
@@ -172,7 +155,7 @@ export function TagsAutocomplete({
               className="cursor-pointer hover:bg-gray-200"
               onClick={() => handleTagRemove(tag)}
             >
-              {titleCase(tag)} ×
+              {getTagDisplayName(tag as WorkoutTag)} ×
             </Badge>
           ))}
         </div>
@@ -187,22 +170,22 @@ export function TagsAutocomplete({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={handleInputFocus}
-            placeholder={loading ? "Loading tags..." : placeholder}
-            disabled={loading}
+            placeholder={placeholder}
+            disabled={false}
             className="flex-1"
           />
           <Button 
             type="button" 
             variant="outline" 
-            onClick={handleAddCustomTag}
-            disabled={!inputValue.trim()}
+            onClick={handleAddPresetTag}
+            disabled={!inputValue.trim() || !availableTags.includes(inputValue.trim().toLowerCase() as WorkoutTag)}
           >
             Add
           </Button>
         </div>
 
         {/* Dropdown */}
-        {showDropdown && (filteredTags.length > 0 || (!inputValue.trim() && availableTags.length > 0)) && (
+        {showDropdown && filteredTags.length > 0 && (
           <div 
             ref={dropdownRef}
             className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto"
@@ -216,30 +199,15 @@ export function TagsAutocomplete({
                 onClick={() => handleTagSelect(tag)}
                 onMouseEnter={() => setHighlightedIndex(index)}
               >
-                <span className="text-sm">{titleCase(tag)}</span>
+                <span className="text-sm">{getTagDisplayName(tag as WorkoutTag)}</span>
               </div>
             ))}
-            
-            {/* Show option to add custom tag if it doesn't exist */}
-            {inputValue.trim() && !availableTags.includes(inputValue.trim().toLowerCase()) && (
-              <div
-                className={`px-3 py-2 cursor-pointer hover:bg-gray-100 border-t border-gray-200 ${
-                  highlightedIndex === filteredTags.length ? 'bg-blue-100' : ''
-                }`}
-                onClick={handleAddCustomTag}
-                onMouseEnter={() => setHighlightedIndex(filteredTags.length)}
-              >
-                <span className="text-sm text-gray-600">
-                  Add &quot;{titleCase(inputValue.trim())}&quot; as new tag
-                </span>
-              </div>
-            )}
           </div>
         )}
       </div>
 
       <p className="text-xs text-gray-500 mt-1">
-        Start typing to see suggestions, or add your own tags
+        Start typing to see suggestions from preset tags
       </p>
     </div>
   );

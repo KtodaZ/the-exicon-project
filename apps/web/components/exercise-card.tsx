@@ -14,19 +14,19 @@ interface ExerciseCardProps {
 
 export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardProps) {
   const { name, description, tags, urlSlug, difficulty, video_url, image_url } = exercise;
-  
+
   // Check if this is one of the placeholder image URLs or if image_url is null/empty
   const shouldShowPlaceholder = image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
-                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png' ||
-                               !image_url;
-  
+    image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png' ||
+    !image_url;
+
   // Function to determine difficulty level text and color
   const getDifficultyInfo = (difficultyValue: number) => {
     if (difficultyValue <= 0.3) return { text: "Beginner", className: "text-green-600" };
     if (difficultyValue <= 0.6) return { text: "Intermediate", className: "text-yellow-600" };
     return { text: "Advanced", className: "text-brand-red" };
   };
-  
+
   const difficultyInfo = getDifficultyInfo(difficulty);
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -68,23 +68,23 @@ export function ExerciseCard({ exercise, onTagClick, className }: ExerciseCardPr
                   height={158}
                 />
               ) : (
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-12 w-12 text-gray-400 dark:text-gray-600" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-gray-400 dark:text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={1.5} 
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 00-2-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
               )}
             </div>
-            <p className="text-gray-600 dark:text-gray-400 line-clamp-3 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 line-clamp-4 text-sm">
               {description}
             </p>
           </CardContent>

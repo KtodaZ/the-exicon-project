@@ -11,7 +11,7 @@ export default async function handler(
 
   try {
     const { q: query = '', limit = '5' } = req.query;
-    
+
     if (!query || typeof query !== 'string') {
       return res.status(400).json({ error: 'Query parameter "q" is required' });
     }
@@ -22,15 +22,15 @@ export default async function handler(
     }
 
     const suggestions = await getSearchSuggestions(query, limitNum);
-    
-    return res.status(200).json({ 
+
+    return res.status(200).json({
       suggestions,
       query: query.trim(),
       count: suggestions.length
     });
   } catch (error) {
     console.error('API Error in /api/exercises/suggestions:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'An error occurred while fetching suggestions',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
