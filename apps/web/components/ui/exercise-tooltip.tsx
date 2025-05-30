@@ -17,7 +17,6 @@ export function ExerciseTooltip({ slug, children, className }: ExerciseTooltipPr
     const [error, setError] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
     const [isShiftPressed, setIsShiftPressed] = useState(false);
-    console.log('isShiftPressed', isShiftPressed);
 
     // Track Shift key state
     useEffect(() => {
@@ -91,15 +90,22 @@ export function ExerciseTooltip({ slug, children, className }: ExerciseTooltipPr
     return (
         <div
             className={`relative inline-block ${className}`}
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={() => {
+                console.log('Tooltip mouse enter for slug:', slug);
+                setShowTooltip(true);
+            }}
+            onMouseLeave={() => {
+                console.log('Tooltip mouse leave for slug:', slug);
+                handleMouseLeave();
+            }}
         >
             <span className="underline hover:text-[#AD0C02] transition-colors cursor-pointer">
                 {children}
             </span>
 
             {showTooltip && (
-                <div className="absolute z-50 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-xl bottom-full left-1/2 transform -translate-x-1/2 mb-2 overflow-hidden">
+                <div className="absolute z-[9999] w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-xl bottom-full left-1/2 transform -translate-x-1/2 mb-2 overflow-hidden"
+                     style={{ position: 'absolute' }}>
                     {/* Arrow pointing down */}
                     <div className="absolute top-full left-1/2 transform -translate-x-1/2">
                         <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200 dark:border-t-gray-800"></div>

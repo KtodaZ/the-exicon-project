@@ -123,15 +123,56 @@ async function main() {
 
         console.log('🔍 EXERCISE REFERENCE PROPOSALS REVIEW\n');
 
-        // Get pending exercise reference proposals
-        const proposals = await db.getExerciseReferenceProposals('pending', 50);
+        // Get pending exercise reference proposals with pagination
+        let allProposals: any[] = [];
+        let proposals: any[] = [];
+        let skip = 0;
+        const batchSize = 200;
+        const maxToCheck = 10000; // Increased maximum total proposals to check
+        
+        console.log('🔍 Searching for proposals with actual changes...');
+        
+        // Continue searching until we've checked all proposals or hit the limit
+        while (allProposals.length < maxToCheck) {
+            const batch = await db.getExerciseReferenceProposals('pending', batchSize, skip);
+            
+            if (batch.length === 0) {
+                console.log('📄 Reached end of proposals');
+                break;
+            }
+            
+            allProposals.push(...batch);
+            
+            // Filter out proposals that don't have actual proposed changes
+            const filteredBatch = batch.filter(proposal => {
+                if (proposal.field === 'referencedExercises') {
+                    const proposed = Array.isArray(proposal.proposedValue) ? proposal.proposedValue : [];
+                    return proposed.length > 0; // Only show if there are actual proposed references
+                } else if (proposal.field === 'description') {
+                    return proposal.proposedValue && proposal.proposedValue !== proposal.currentValue;
+                }
+                return true; // Keep other types of proposals
+            });
+            
+            proposals.push(...filteredBatch);
+            
+            // Show progress every batch
+            if (batch.length > 0) {
+                console.log(`⏭️  Checked ${allProposals.length} proposals so far, found ${proposals.length} with changes...`);
+            }
+            
+            skip += batchSize;
+        }
 
         if (proposals.length === 0) {
-            console.log('✅ No pending exercise reference proposals found!');
+            console.log('✅ No pending exercise reference proposals with actual changes found!');
+            if (allProposals.length > 0) {
+                console.log(`ℹ️  Searched through ${allProposals.length} total proposals, but none had actual proposed changes.`);
+            }
             return;
         }
 
-        console.log(`📋 Found ${proposals.length} pending proposals:\n`);
+        console.log(`📋 Found ${proposals.length} pending proposals with actual changes (searched through ${allProposals.length} total proposals):\n`);
 
         // Check if user wants interactive mode
         if (action === 'interactive' || action === 'i') {
@@ -165,7 +206,11 @@ async function main() {
         }
 
         console.log(`\n📊 SUMMARY:`);
-        console.log(`Total pending proposals: ${proposals.length}`);
+        console.log(`Total pending proposals with changes: ${proposals.length}`);
+        if (allProposals.length > proposals.length) {
+            console.log(`Total pending proposals (including empty): ${allProposals.length}`);
+            console.log(`Filtered out empty proposals: ${allProposals.length - proposals.length}`);
+        }
 
         const referenceProposals = proposals.filter(p => p.field === 'referencedExercises');
         const descriptionProposals = proposals.filter(p => p.field === 'description');

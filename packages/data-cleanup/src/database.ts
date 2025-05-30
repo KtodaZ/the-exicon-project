@@ -285,7 +285,7 @@ export class DatabaseManager {
       .toArray();
   }
 
-  async getExerciseReferenceProposals(status: 'pending' | 'approved' | 'rejected' = 'pending', limit: number = 50): Promise<CleanupProposal[]> {
+  async getExerciseReferenceProposals(status: 'pending' | 'approved' | 'rejected' = 'pending', limit: number = 50, skip: number = 0): Promise<CleanupProposal[]> {
     const collection = this.getProposalsCollection();
     return await collection
       .find({
@@ -293,6 +293,7 @@ export class DatabaseManager {
         status
       })
       .sort({ timestamp: -1 })
+      .skip(skip)
       .limit(limit)
       .toArray();
   }

@@ -6,23 +6,26 @@ import { ExerciseTooltip } from './exercise-tooltip';
 interface ExerciseTextRendererProps {
   text: string;
   className?: string;
+  showTooltips?: boolean;
 }
 
-export function ExerciseTextRenderer({ text, className }: ExerciseTextRendererProps) {
+export function ExerciseTextRenderer({ text, className, showTooltips = true }: ExerciseTextRendererProps) {
   // Parse the text and render exercise references as clickable links with tooltips
   const renderTextWithReferences = (content: string): React.ReactNode => {
     const parts: React.ReactNode[] = [];
     let lastIndex = 0;
 
-    // Match references like [Exercise Name](@exercise-slug)
-    const referenceRegex = /\[([^\]]+)\]\(@([^)]+)\)/g;
+    // Create a combined regex that matches both exercise references and URLs
+    // Exercise references: [Exercise Name](@exercise-slug)
+    // URLs: http(s)://... or www....
+    const combinedRegex = /(\[([^\]]+)\]\(@([^)]+)\))|(https?:\/\/[^\s]+)|(www\.[^\s]+)/g;
     let match;
 
-    while ((match = referenceRegex.exec(content)) !== null) {
-      const [fullMatch, exerciseName, slug] = match;
+    while ((match = combinedRegex.exec(content)) !== null) {
+      const [fullMatch, exerciseRef, exerciseName, slug, httpUrl, wwwUrl] = match;
       const startIndex = match.index;
 
-      // Add text before this reference
+      // Add text before this match
       if (startIndex > lastIndex) {
         parts.push(
           <span key={`text-${lastIndex}`}>
@@ -31,17 +34,47 @@ export function ExerciseTextRenderer({ text, className }: ExerciseTextRendererPr
         );
       }
 
-      // Add the reference as a simple underlined link with tooltip
-      parts.push(
-        <ExerciseTooltip key={`tooltip-${startIndex}`} slug={slug}>
+      if (exerciseRef) {
+        // Handle exercise reference
+        const linkElement = (
           <Link
             href={`/exicon/${slug}`}
             className="underline hover:text-[#AD0C02] transition-colors"
           >
             {exerciseName}
           </Link>
-        </ExerciseTooltip>
-      );
+        );
+
+        if (showTooltips) {
+          parts.push(
+            <ExerciseTooltip key={`tooltip-${startIndex}`} slug={slug}>
+              {linkElement}
+            </ExerciseTooltip>
+          );
+        } else {
+          parts.push(
+            <span key={`link-${startIndex}`}>
+              {linkElement}
+            </span>
+          );
+        }
+      } else if (httpUrl || wwwUrl) {
+        // Handle regular URL
+        const url = httpUrl || wwwUrl;
+        const href = httpUrl || `https://${wwwUrl}`;
+        
+        parts.push(
+          <a
+            key={`url-${startIndex}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-[#AD0C02] transition-colors"
+          >
+            {url}
+          </a>
+        );
+      }
 
       lastIndex = startIndex + fullMatch.length;
     }
