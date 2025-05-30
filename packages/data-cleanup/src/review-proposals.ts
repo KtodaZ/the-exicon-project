@@ -42,7 +42,7 @@ async function interactiveReview(db: DatabaseManager, proposals: any[]) {
 
             console.log(`Current references: [${current.join(', ')}]`);
             console.log(`Proposed references: [${proposed.join(', ')}]`);
-        } else if (proposal.field === 'description') {
+        } else if (proposal.field === 'description' || proposal.field === 'text') {
             console.log(`Current: "${String(proposal.currentValue).substring(0, 150)}..."`);
             console.log(`Proposed: "${String(proposal.proposedValue).substring(0, 150)}..."`);
         }
@@ -148,7 +148,7 @@ async function main() {
                 if (proposal.field === 'referencedExercises') {
                     const proposed = Array.isArray(proposal.proposedValue) ? proposal.proposedValue : [];
                     return proposed.length > 0; // Only show if there are actual proposed references
-                } else if (proposal.field === 'description') {
+                } else if (proposal.field === 'description' || proposal.field === 'text') {
                     return proposal.proposedValue && proposal.proposedValue !== proposal.currentValue;
                 }
                 return true; // Keep other types of proposals
@@ -196,9 +196,9 @@ async function main() {
 
                 console.log(`   Current references: [${current.join(', ')}]`);
                 console.log(`   Proposed references: [${proposed.join(', ')}]`);
-            } else if (proposal.field === 'description') {
-                console.log(`   Current: "${String(proposal.currentValue).substring(0, 100)}..."`);
-                console.log(`   Proposed: "${String(proposal.proposedValue).substring(0, 100)}..."`);
+            } else if (proposal.field === 'description' || proposal.field === 'text') {
+                console.log(`   Current: "${String(proposal.currentValue).substring(0, 150)}..."`);
+                console.log(`   Proposed: "${String(proposal.proposedValue).substring(0, 150)}..."`);
             }
 
             console.log(`   Proposal ID: ${proposal._id}`);
@@ -214,9 +214,11 @@ async function main() {
 
         const referenceProposals = proposals.filter(p => p.field === 'referencedExercises');
         const descriptionProposals = proposals.filter(p => p.field === 'description');
+        const textProposals = proposals.filter(p => p.field === 'text');
 
         console.log(`Reference proposals: ${referenceProposals.length}`);
         console.log(`Description proposals: ${descriptionProposals.length}`);
+        console.log(`Text proposals: ${textProposals.length}`);
 
         const avgConfidence = proposals.reduce((sum, p) => sum + p.confidence, 0) / proposals.length;
         console.log(`Average confidence: ${(avgConfidence * 100).toFixed(1)}%`);

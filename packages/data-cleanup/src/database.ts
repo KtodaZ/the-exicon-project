@@ -293,7 +293,7 @@ export class DatabaseManager {
     const collection = this.getProposalsCollection();
     return await collection
       .find({
-        field: { $in: ['referencedExercises', 'description'] },
+        field: { $in: ['referencedExercises', 'description', 'text'] },
         status
       })
       .sort({ timestamp: -1 })
