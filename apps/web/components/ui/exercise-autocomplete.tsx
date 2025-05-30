@@ -37,6 +37,13 @@ export function ExerciseAutocomplete({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Function to calculate display text length (excluding markdown syntax)
+  const getDisplayTextLength = (text: string) => {
+    // Replace markdown exercise references [Display Text](@slug) with just "Display Text"
+    const displayText = text.replace(/\[([^\]]+)\]\(@[^)]+\)/g, '$1');
+    return displayText.length;
+  };
+
   // Detect @ mentions in the text
   useEffect(() => {
     if (!inputRef.current) return;
@@ -172,15 +179,7 @@ export function ExerciseAutocomplete({
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     
-    // Enforce character limit if provided
-    // Allow the change if:
-    // 1. No maxLength is set, OR
-    // 2. New value is within limit, OR  
-    // 3. New value is shorter than current (allowing deletions)
-    if (maxLength && newValue.length > maxLength && newValue.length > value.length) {
-      return; // Only prevent if exceeding limit AND adding characters
-    }
-    
+    // No character limit enforcement - just update the value
     onChange(newValue);
   };
 
@@ -220,7 +219,6 @@ export function ExerciseAutocomplete({
           placeholder={placeholder}
           className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] font-mono text-sm"
           rows={6}
-          maxLength={maxLength}
         />
 
         {/* Dropdown */}
@@ -254,8 +252,8 @@ export function ExerciseAutocomplete({
           Type @ followed by an exercise name to create a reference. Example: @burpee
         </p>
         {maxLength && (
-          <p className={`text-xs ${value.length > maxLength * 0.9 ? 'text-orange-500' : 'text-gray-500'}`}>
-            {value.length}/{maxLength}
+          <p className={`text-xs ${getDisplayTextLength(value) > maxLength * 0.9 ? 'text-orange-500' : 'text-gray-500'}`}>
+            {getDisplayTextLength(value)}/{maxLength}
           </p>
         )}
       </div>

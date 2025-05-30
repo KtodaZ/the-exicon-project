@@ -356,7 +356,7 @@ export default function SubmitExercise() {
                       value={formData.description}
                       onChange={(value) => handleInputChange('description', value)}
                       placeholder="Briefly describe the exercise (use @ to reference other exercises)"
-                      maxLength={120}
+                      maxLength={150}
                     />
                   </div>
 

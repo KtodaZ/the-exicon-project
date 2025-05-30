@@ -339,7 +339,7 @@ export default function EditExercisePage() {
                     value={formData.description}
                     onChange={(value) => handleInputChange('description', value)}
                     placeholder="Brief description of the exercise (use @ to reference other exercises)"
-                    maxLength={120}
+                    maxLength={150}
                   />
                 </div>
 
