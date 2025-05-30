@@ -11,6 +11,7 @@
     "bulk-tags-cleanup": "node dist/bulk-tags-cleanup.js",
     "bulk-text-formatting": "node dist/bulk-text-formatting.js",
     "bulk-hybrid-references": "node dist/bulk-hybrid.js",
+    "bulk-hybrid-text-references": "node dist/bulk-hybrid-text.js",
     "test-hybrid-references": "node dist/test-hybrid.js",
     "review-proposals": "node dist/review-proposals.js",
     "approve-proposal": "node dist/approve-proposal.js",

@@ -191,7 +191,7 @@ export class DatabaseManager {
     );
   }
 
-  async createExerciseReferenceProposal(exerciseId: string, referencedExercises: string[], updatedDescription?: string, confidence: number = 0.8): Promise<void> {
+  async createExerciseReferenceProposal(exerciseId: string, referencedExercises: string[], updatedText?: string, confidence: number = 0.8, targetField: 'description' | 'text' = 'description'): Promise<void> {
     // Get the current exercise to compare
     const collection = this.getExercisesCollection();
     const currentExercise = await collection.findOne({ _id: exerciseId });
@@ -214,20 +214,24 @@ export class DatabaseManager {
 
     await this.saveProposal(referenceProposal);
 
-    // Create proposal for description update if provided
-    if (updatedDescription !== undefined && updatedDescription !== currentExercise.description) {
-      const descriptionProposal: CleanupProposal = {
-        exerciseId,
-        field: 'description',
-        currentValue: currentExercise.description || '',
-        proposedValue: updatedDescription,
-        reason: `Updated description with markdown exercise references`,
-        confidence,
-        timestamp: new Date(),
-        status: 'pending'
-      };
+    // Create proposal for text/description update if provided
+    if (updatedText !== undefined) {
+      const currentValue = targetField === 'text' ? currentExercise.text || '' : currentExercise.description || '';
+      
+      if (updatedText !== currentValue) {
+        const textProposal: CleanupProposal = {
+          exerciseId,
+          field: targetField,
+          currentValue,
+          proposedValue: updatedText,
+          reason: `Updated ${targetField} with markdown exercise references`,
+          confidence,
+          timestamp: new Date(),
+          status: 'pending'
+        };
 
-      await this.saveProposal(descriptionProposal);
+        await this.saveProposal(textProposal);
+      }
     }
   }
 
@@ -338,5 +342,28 @@ export class DatabaseManager {
       { _id: proposalId },
       { $set: { status: 'rejected' } }
     );
+  }
+
+  async getExercisesForTextReferenceDetection(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
+    const collection = this.getExercisesCollection();
+
+    // Get exercises that have text field content that hasn't been processed for references
+    const query = {
+      $and: [
+        {
+          _id: { $nin: excludeIds } // Exclude already processed exercises
+        },
+        {
+          text: { $exists: true, $ne: '' } // Must have text content
+        }
+        // Note: We don't check for referencedExercises existence here since we want to process
+        // text fields separately from description fields
+      ]
+    };
+
+    return await collection
+      .find(query as any)
+      .limit(limit)
+      .toArray();
   }
 }

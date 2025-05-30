@@ -91,11 +91,9 @@ export function ExerciseTooltip({ slug, children, className }: ExerciseTooltipPr
         <div
             className={`relative inline-block ${className}`}
             onMouseEnter={() => {
-                console.log('Tooltip mouse enter for slug:', slug);
                 setShowTooltip(true);
             }}
             onMouseLeave={() => {
-                console.log('Tooltip mouse leave for slug:', slug);
                 handleMouseLeave();
             }}
         >

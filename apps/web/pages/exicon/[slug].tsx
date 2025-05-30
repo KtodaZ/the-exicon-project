@@ -15,6 +15,7 @@ import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-l
 import { ExerciseTextRenderer } from '@/components/ui/exercise-text-renderer';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 import { Settings } from 'lucide-react';
+import { ExerciseMeta } from '@/components/meta/exercise-meta';
 
 // Helper function to convert text to title case
 function toTitleCase(str: string): string {
@@ -121,10 +122,11 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 
   return (
     <>
-      <Head>
-        <title>{name} | Exicon</title>
-        <meta name="description" content={description} />
-      </Head>
+      <ExerciseMeta
+        name={name}
+        description={description}
+        urlSlug={exercise.urlSlug}
+      />
 
       <div className="min-h-screen bg-gray-100 dark:bg-black">
         <div className="container mx-auto py-8">

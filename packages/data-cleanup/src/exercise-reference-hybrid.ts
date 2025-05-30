@@ -18,6 +18,7 @@ export interface ExerciseReferenceResult {
   references: ExerciseReference[];
   updatedText: string;     // Text with markdown-style references
   confidence: number;      // Overall confidence in the results
+  targetField: 'description' | 'text'; // Which field was processed
 }
 
 export class ExerciseReferenceHybrid {
@@ -41,15 +42,17 @@ export class ExerciseReferenceHybrid {
 
   /**
    * Process an exercise to find and validate references using AI + Search API
+   * @param exercise The exercise to process
+   * @param targetField Which field to process and update ('description' or 'text')
    */
-  async processExercise(exercise: Exercise): Promise<ExerciseReferenceResult | null> {
-    const textToAnalyze = exercise.description || exercise.text || '';
+  async processExercise(exercise: Exercise, targetField: 'description' | 'text' = 'description'): Promise<ExerciseReferenceResult | null> {
+    const textToAnalyze = targetField === 'text' ? exercise.text || '' : exercise.description || exercise.text || '';
 
     if (!textToAnalyze.trim()) {
       return null;
     }
 
-    console.log(`🔍 Processing: ${exercise.name}`);
+    console.log(`🔍 Processing ${targetField}: ${exercise.name}`);
 
     try {
       // Step 1: Use AI to detect potential exercise mentions
@@ -118,7 +121,8 @@ export class ExerciseReferenceHybrid {
         originalText: textToAnalyze,
         references: validatedReferences,
         updatedText,
-        confidence
+        confidence,
+        targetField // Add the target field to the result
       };
 
     } catch (error) {
