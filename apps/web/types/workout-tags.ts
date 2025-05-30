@@ -26,6 +26,7 @@ export const WORKOUT_TAGS = {
   PULL_UP_BAR: 'pull-up-bar',
   TIMER: 'timer',
   MUSIC: 'music',
+  VIDEO: 'video',
 
   // Body parts
   TRICEPS: 'triceps',
@@ -62,6 +63,7 @@ const TAG_IMAGE_MAP: Record<WorkoutTag, string> = {
   [WORKOUT_TAGS.CRAWL]: '/categories/crawl.png',
   [WORKOUT_TAGS.PLANK]: '/categories/plank.png',
   [WORKOUT_TAGS.MUSIC]: '/categories/music.png',
+  [WORKOUT_TAGS.VIDEO]: '/categories/routine.png', // Using routine icon as fallback until video icon is created
   [WORKOUT_TAGS.PULL_UP_BAR]: '/categories/pull-up-bar.png',
   [WORKOUT_TAGS.GAME]: '/categories/game.png',
   [WORKOUT_TAGS.TRACK]: '/categories/track.png',
@@ -76,7 +78,6 @@ const TAG_IMAGE_MAP: Record<WorkoutTag, string> = {
   [WORKOUT_TAGS.MERKIN]: '/categories/merkin.png',
   [WORKOUT_TAGS.BURPEE]: '/categories/merkin.png',
   [WORKOUT_TAGS.CORE]: '/categories/core.png',
-
 
   // Fallback mappings (medium priority - using full-body as default)
   [WORKOUT_TAGS.ENDURANCE]: '/categories/run.png',
@@ -191,6 +192,7 @@ export const WORKOUT_TAG_CATEGORIES: Record<WorkoutTagCategory, WorkoutTag[]> = 
     WORKOUT_TAGS.PLAYGROUND_SWING,
     WORKOUT_TAGS.PULL_UP_BAR,
     WORKOUT_TAGS.TIMER,
+    WORKOUT_TAGS.VIDEO,
   ],
   'isolation': [
     WORKOUT_TAGS.CALVES,

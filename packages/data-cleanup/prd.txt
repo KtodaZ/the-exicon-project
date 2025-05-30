@@ -1,0 +1,137 @@
+PRODUCT REQUIREMENTS DOCUMENT: Exercise Reference Detection System
+===============================================================================
+
+OVERVIEW
+--------
+An intelligent system to detect and link exercise references within exercise descriptions, creating an interconnected exercise database with rich navigation and context.
+
+PROBLEM STATEMENT
+-----------------
+Currently, exercise descriptions mention other exercises in plain text without any linking or context. Users cannot easily discover related exercises or understand referenced movements, limiting the educational value and interconnectedness of the exercise database.
+
+GOALS
+-----
+1. Automatically detect mentions of other exercises in exercise descriptions
+2. Convert text mentions into interactive markdown-style references
+3. Enable hover tooltips and click navigation between related exercises
+4. Create a web of exercise relationships for better discovery
+5. Support admin UI for manual exercise referencing during content creation
+
+TARGET USERS
+------------
+- Primary: F3 workout participants looking up exercise instructions
+- Secondary: Workout leaders (Q's) planning routines
+- Tertiary: Content administrators creating/editing exercises
+
+SUCCESS METRICS
+---------------
+- Accuracy: >85% correct exercise reference detection
+- Coverage: Process 100% of exercises with text descriptions
+- User Engagement: Increase in exercise page views via reference links
+- Admin Efficiency: Reduce time to add exercise references by 80%
+
+TECHNICAL REQUIREMENTS
+---------------------
+
+### Core Detection Engine
+- Use OpenAI GPT-4o-mini for intelligent text analysis
+- Build searchable exercise database with aliases and variations
+- Support F3-specific terminology (merkin = push-up, etc.)
+- Generate markdown-style references: [Exercise Name](@exercise-slug)
+
+### Database Schema
+- `referencedExercises: string[]` - exercises this one references
+- `referencedBy: string[]` - exercises that reference this one
+- `slug: string` - URL-friendly identifier for linking
+
+### Processing Pipeline
+- Batch processing with rate limiting and error handling
+- Progress tracking to resume interrupted runs
+- Confidence scoring for AI-detected references
+- Position validation to prevent text corruption
+
+### Admin UI Enhancements
+- @ symbol autocomplete for exercise mentions
+- Live preview of reference rendering
+- Support for aliases (e.g., @man-maker, @manmaker)
+- Validation against preset exercise database
+
+### Frontend Components
+- ExerciseRef component for rendering [text](@slug) as links
+- Tooltip component showing exercise previews on hover
+- Click navigation to referenced exercise pages
+
+FUNCTIONAL SPECIFICATIONS
+-------------------------
+
+### Reference Detection
+Input: "With a ruck, perform a man maker. Burpee with squat thruster."
+Output: "With a ruck, perform a [man maker](@man-maker). [Burpee](@burpee) with [squat thruster](@squat-thruster)."
+
+### Alias Support
+- "Man Maker" → man-maker
+- "manmaker" → man-maker  
+- "man_maker" → man-maker
+- "merkins" → merkin
+- "burpees" → burpee
+
+### Admin UI Flow
+1. User types "@man" in description field
+2. Dropdown shows matching exercises
+3. User selects "Man Maker"
+4. Text shows "[Man Maker](@man-maker)"
+5. Preview shows how it will render
+
+NON-FUNCTIONAL REQUIREMENTS
+---------------------------
+- Performance: Process 30 exercises per batch in <60 seconds
+- Reliability: 99% uptime for reference detection service
+- Scalability: Handle 1000+ exercises without degradation
+- Maintainability: Modular architecture for easy updates
+
+CONSTRAINTS
+-----------
+- Must preserve original exercise content exactly
+- Cannot break existing exercise descriptions
+- Must work with current MongoDB schema
+- OpenAI API rate limits apply
+
+ACCEPTANCE CRITERIA
+------------------
+1. ✅ Detect "man maker", "burpee", "squat thruster" in test description
+2. ✅ Generate valid markdown references with correct slugs
+3. ✅ Preserve original text formatting and content
+4. ✅ Handle position calculations accurately
+5. ✅ Support batch processing of all exercises
+6. ✅ Track progress and allow resumption
+7. ⏳ Admin UI supports @ mentions with autocomplete
+8. ⏳ Frontend renders references as interactive links
+
+ROLLOUT PLAN
+------------
+Phase 1: Core detection engine and database updates
+Phase 2: Bulk processing of existing exercise database  
+Phase 3: Admin UI enhancements for manual referencing
+Phase 4: Frontend components for reference rendering
+Phase 5: Full integration and user testing
+
+RISKS & MITIGATIONS
+------------------
+- Risk: AI false positives in exercise detection
+  Mitigation: Confidence thresholds and manual review options
+
+- Risk: Text corruption during reference insertion
+  Mitigation: Position validation and rollback capabilities
+
+- Risk: OpenAI API rate limits impacting processing
+  Mitigation: Batch processing with delays and retry logic
+
+- Risk: Database schema changes breaking existing code
+  Mitigation: Backward-compatible field additions only
+
+FUTURE ENHANCEMENTS
+------------------
+- Visual exercise relationship graphs
+- Automatic workout routine suggestions based on references
+- Exercise difficulty progression recommendations
+- Integration with video/image assets for referenced exercises

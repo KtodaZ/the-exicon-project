@@ -133,4 +133,134 @@ export class DatabaseManager {
     await collection.insertOne(proposal);
   }
 
+  // Exercise reference methods
+  async getAllExercises(): Promise<Exercise[]> {
+    const collection = this.getExercisesCollection();
+    return await collection.find({}).toArray();
+  }
+
+  async getCollection(): Promise<Collection<Exercise>> {
+    return this.getExercisesCollection();
+  }
+
+  async getExercisesForReferenceDetection(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
+    const collection = this.getExercisesCollection();
+    
+    // Get exercises that have description or text but no referencedExercises field
+    const query = {
+      $and: [
+        { 
+          _id: { $nin: excludeIds } // Exclude already processed exercises
+        },
+        {
+          $or: [
+            { description: { $exists: true, $ne: '' } },
+            { text: { $exists: true, $ne: '' } }
+          ]
+        },
+        {
+          referencedExercises: { $exists: false }
+        }
+      ]
+    };
+    
+    return await collection
+      .find(query as any)
+      .limit(limit)
+      .toArray();
+  }
+
+  async updateExerciseReferences(exerciseId: string, referencedExercises: string[], updatedDescription?: string): Promise<void> {
+    const collection = this.getExercisesCollection();
+    
+    const updateDoc: any = {
+      $set: {
+        referencedExercises,
+        updated_at: new Date()
+      }
+    };
+
+    // Update description if provided
+    if (updatedDescription !== undefined) {
+      updateDoc.$set.description = updatedDescription;
+    }
+
+    await collection.updateOne(
+      { _id: exerciseId },
+      updateDoc
+    );
+  }
+
+  async updateReferencedByFields(): Promise<void> {
+    const collection = this.getExercisesCollection();
+    
+    console.log('🔄 Updating referencedBy fields...');
+    
+    // First, clear all existing referencedBy fields
+    await collection.updateMany(
+      {},
+      { $unset: { referencedBy: "" } }
+    );
+    
+    // Get all exercises with references
+    const exercisesWithRefs = await collection.find({
+      referencedExercises: { $exists: true, $not: { $size: 0 } }
+    }).toArray();
+    
+    // Build reverse mapping
+    const reverseMap: Map<string, string[]> = new Map();
+    
+    for (const exercise of exercisesWithRefs) {
+      if (exercise.referencedExercises) {
+        for (const refSlug of exercise.referencedExercises) {
+          if (!reverseMap.has(refSlug)) {
+            reverseMap.set(refSlug, []);
+          }
+          reverseMap.get(refSlug)!.push(exercise._id);
+        }
+      }
+    }
+    
+    // Update referencedBy fields
+    for (const [slug, referencingIds] of reverseMap.entries()) {
+      // Find the exercise with this slug (we'll need to implement slug generation)
+      const exercise = await collection.findOne({ slug });
+      if (exercise) {
+        await collection.updateOne(
+          { _id: exercise._id },
+          { $set: { referencedBy: referencingIds } }
+        );
+      }
+    }
+    
+    console.log(`✅ Updated referencedBy fields for ${reverseMap.size} exercises`);
+  }
+
+  async generateAndStoreSlugs(): Promise<void> {
+    const collection = this.getExercisesCollection();
+    
+    console.log('🏷️  Generating and storing slugs for all exercises...');
+    
+    const exercises = await collection.find({}).toArray();
+    
+    for (const exercise of exercises) {
+      const slug = this.generateSlug(exercise.name);
+      await collection.updateOne(
+        { _id: exercise._id },
+        { $set: { slug } }
+      );
+    }
+    
+    console.log(`✅ Generated slugs for ${exercises.length} exercises`);
+  }
+
+  private generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars except spaces and hyphens
+      .trim()
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-'); // Replace multiple hyphens with single
+  }
+
 }

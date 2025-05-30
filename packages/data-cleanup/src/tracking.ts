@@ -2,7 +2,11 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 
 const TRACKING_DIR = path.join(__dirname, '../data');
-const PROCESSED_FILE = path.join(TRACKING_DIR, 'processed.json');
+
+// Support multiple tracking files for different cleanup types
+function getTrackingFile(cleanupType: string = 'default'): string {
+  return path.join(TRACKING_DIR, `processed-${cleanupType}.json`);
+}
 
 export interface ProcessingTracker {
   processed: string[];
@@ -11,15 +15,18 @@ export interface ProcessingTracker {
 
 export class TrackingManager {
   private tracker: ProcessingTracker;
+  private cleanupType: string;
 
-  constructor() {
+  constructor(cleanupType: string = 'default') {
+    this.cleanupType = cleanupType;
     this.tracker = this.loadTracker();
   }
 
   private loadTracker(): ProcessingTracker {
+    const file = getTrackingFile(this.cleanupType);
     try {
-      if (fs.existsSync(PROCESSED_FILE)) {
-        const data = fs.readJsonSync(PROCESSED_FILE);
+      if (fs.existsSync(file)) {
+        const data = fs.readJsonSync(file);
         return {
           processed: data.processed || [],
           lastRun: new Date(data.lastRun || new Date())
@@ -36,9 +43,10 @@ export class TrackingManager {
   }
 
   private saveTracker(): void {
+    const file = getTrackingFile(this.cleanupType);
     try {
       fs.ensureDirSync(TRACKING_DIR);
-      fs.writeJsonSync(PROCESSED_FILE, {
+      fs.writeJsonSync(file, {
         processed: this.tracker.processed,
         lastRun: this.tracker.lastRun
       }, { spaces: 2 });
@@ -77,4 +85,65 @@ export class TrackingManager {
     };
     this.saveTracker();
   }
+}
+
+// Helper functions for different cleanup types
+export async function loadProcessedIds(cleanupType: string): Promise<string[]> {
+  const file = getTrackingFile(cleanupType);
+  try {
+    if (fs.existsSync(file)) {
+      const data = fs.readJsonSync(file);
+      return data.processed || [];
+    }
+  } catch (error) {
+    console.warn(`Could not load tracking file for ${cleanupType}, starting fresh`);
+  }
+  return [];
+}
+
+export async function saveProcessedId(cleanupType: string, exerciseId: string): Promise<void> {
+  const file = getTrackingFile(cleanupType);
+  
+  try {
+    let data: ProcessingTracker = {
+      processed: [],
+      lastRun: new Date()
+    };
+    
+    if (fs.existsSync(file)) {
+      const existing = fs.readJsonSync(file);
+      data.processed = existing.processed || [];
+    }
+    
+    if (!data.processed.includes(exerciseId)) {
+      data.processed.push(exerciseId);
+      data.lastRun = new Date();
+      
+      fs.ensureDirSync(TRACKING_DIR);
+      fs.writeJsonSync(file, data, { spaces: 2 });
+    }
+  } catch (error) {
+    console.error(`Failed to save tracking for ${cleanupType}:`, error);
+  }
+}
+
+export async function getTrackingStats(cleanupType: string): Promise<{ totalProcessed: number; lastRun: Date | null }> {
+  const file = getTrackingFile(cleanupType);
+  
+  try {
+    if (fs.existsSync(file)) {
+      const data = fs.readJsonSync(file);
+      return {
+        totalProcessed: (data.processed || []).length,
+        lastRun: data.lastRun ? new Date(data.lastRun) : null
+      };
+    }
+  } catch (error) {
+    console.warn(`Could not load stats for ${cleanupType}`);
+  }
+  
+  return {
+    totalProcessed: 0,
+    lastRun: null
+  };
 }

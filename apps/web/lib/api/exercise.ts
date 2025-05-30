@@ -23,41 +23,40 @@ export async function getAllExercises(
   options?: {
     status?: string;
     userId?: string;
+    hasVideo?: boolean;
   }
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
-  const { status = 'active', userId } = options || {};
-  const cacheKey = cacheKeys.allExercises(page, limit) + `_${status}_${userId || 'public'}`;
-  console.log(`🔍 getAllExercises called - page: ${page}, limit: ${limit}, status: ${status}, userId: ${userId}`);
-  
+  const { status = 'active', userId, hasVideo } = options || {};
+
+  const cacheKey = cacheKeys.allExercises(page, limit) + `_${status}_${userId || 'public'}_${hasVideo || 'all'}`;
+  console.log(`🔍 getAllExercises called - page: ${page}, limit: ${limit}, status: ${status}, userId: ${userId}, hasVideo: ${hasVideo}`);
+
   const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
-  
-  if (cached && cached.exercises.length > 0) {
-    console.log(`✅ getAllExercises using cached result with ${cached.exercises.length} exercises (total: ${cached.totalCount})`);
+
+  if (cached) {
+    console.log(`✅ getAllExercises using cached result with ${cached.exercises.length} exercises`);
     return cached;
   }
 
   console.log('📊 getAllExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
-  console.log('Connected to database:', db.databaseName);
   const collection = db.collection('exercises');
-  console.log('Using collection:', collection.collectionName);
-  
+
   const skip = (page - 1) * limit;
-  console.log('Query params:', { skip, limit, page, status, userId });
-  
+
   try {
     // Check if the collection exists and has documents
     const collectionExists = await db.listCollections({ name: 'exercises' }).toArray();
     console.log('Collection exists check:', collectionExists.length > 0);
-    
+
     if (collectionExists.length === 0) {
       console.error('Collection "exercises" does not exist');
       return { exercises: [], totalCount: 0 };
     }
-    
+
     // Build query filter based on status and user access
     let filter: any = {};
-    
+
     if (status === 'draft' && userId) {
       // User can only see their own drafts
       filter = { status: 'draft', submittedBy: userId };
@@ -71,18 +70,28 @@ export async function getAllExercises(
       // Default fallback to active
       filter = { status: 'active' };
     }
-    
+
+    // Add video filter if specified
+    if (hasVideo === true) {
+      filter.video_url = { $exists: true, $nin: ['', null] };
+    } else if (hasVideo === false) {
+      filter.$or = [
+        { video_url: { $exists: false } },
+        { video_url: { $in: ['', null] } }
+      ];
+    }
+
     console.log('Using filter:', filter);
-    
+
     // Count total documents for debugging
     const totalDocuments = await collection.countDocuments(filter);
     console.log('Total matching documents:', totalDocuments);
-    
+
     if (totalDocuments === 0) {
       console.warn('No exercises found matching filter');
       return { exercises: [], totalCount: 0 };
     }
-    
+
     console.log('Running exercises query with pagination...');
     const exercises = await collection
       .find(filter)
@@ -103,24 +112,18 @@ export async function getAllExercises(
         submittedAt: 1,
       })
       .toArray();
-      
+
     console.log('Found', exercises.length, 'exercises');
-    if (exercises.length > 0) {
-      console.log('First result ID type:', typeof exercises[0]._id);
-      console.log('First result:', {
-        _id: exercises[0]._id,
-        name: exercises[0].name,
-        urlSlug: exercises[0].urlSlug,
-        status: exercises[0].status,
-      });
+
+    if (exercises.length === 0) {
+      console.warn('Query returned no exercises');
+      return { exercises: [], totalCount: totalDocuments };
     }
-    
-    const totalCount = await collection.countDocuments(filter);
-    
-    const result = { exercises, totalCount };
-    console.log(`💾 Caching getAllExercises result (${exercises.length} exercises, ${totalCount} total)`);
+
+    const result = { exercises, totalCount: totalDocuments };
+    console.log(`💾 Caching getAllExercises result (${exercises.length} exercises, ${totalDocuments} total)`);
     await cache.set(cacheKey, result, cacheTTL.allExercises);
-    
+
     return result;
   } catch (error) {
     console.error('Error in getAllExercises:', error);
@@ -132,9 +135,9 @@ export async function getAllExercises(
 export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | null> {
   const cacheKey = cacheKeys.exerciseBySlug(slug);
   console.log(`🔍 getExerciseBySlug called - slug: ${slug}`);
-  
+
   const cached = await cache.get<ExerciseDetail>(cacheKey);
-  
+
   if (cached) {
     console.log(`✅ getExerciseBySlug using cached result for slug: ${slug}`);
     return cached;
@@ -142,14 +145,14 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
 
   console.log(`📊 getExerciseBySlug cache miss - fetching from MongoDB for slug: ${slug}`);
   const db = await getDatabase();
-  
+
   try {
     const exercise = await db
       .collection('exercises')
       .findOne<Exercise>({ urlSlug: slug });
 
     console.log('Exercise lookup result:', exercise ? `Found: ${exercise.name}` : 'Not found');
-    
+
     if (!exercise) {
       console.log(`❌ Exercise not found for slug: ${slug}`);
       return null;
@@ -163,7 +166,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
     // Get similar exercises - pass string ID directly
     console.log(`🔗 Fetching similar exercises for: ${exercise.name} (tags: ${exercise.tags.join(', ')})`);
     const similarExercises = await getSimilarExercises(exercise.tags, exercise._id);
-    
+
     // Look up author information if submittedBy exists
     let authorName = undefined;
     if (exercise.submittedBy) {
@@ -172,7 +175,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
         const user = await db
           .collection('user')
           .findOne({ _id: toObjectId(exercise.submittedBy) });
-        
+
         console.log(`👤 User lookup result:`, user ? {
           id: user._id,
           name: user.name,
@@ -180,9 +183,9 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
           f3Region: user.f3Region,
           email: user.email,
         } : 'User not found');
-        
+
         if (user && user.f3Name) {
-          authorName = user.f3Region 
+          authorName = user.f3Region
             ? `${user.f3Name} (${user.f3Region})`
             : user.f3Name;
           console.log(`✅ Author found with F3 info: ${authorName}`);
@@ -198,18 +201,18 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
     } else {
       console.log(`👤 No submittedBy field found on exercise`);
     }
-    
+
     const result = {
       ...exercise,
       similarExercises,
       authorName
     };
-    
+
     console.log(`📝 Final result authorName: ${result.authorName}`);
     console.log(`📝 Final result author: ${result.author}`);
     console.log(`💾 Caching exercise detail for slug: ${slug} (with ${similarExercises.length} similar exercises)`);
     await cache.set(cacheKey, result, cacheTTL.exerciseDetail);
-    
+
     return result;
   } catch (error) {
     console.error('Error in getExerciseBySlug:', error);
@@ -224,7 +227,7 @@ export async function getExerciseBySlug(slug: string): Promise<ExerciseDetail | 
 function processVideoUrl(url: string): string {
   // For now, we're just ensuring the URL is properly formatted
   // This is where server-side conversion could be implemented in the future
-  
+
   // If URL ends with .mov but the content is compatible with MP4 format
   // This doesn't actually convert the video, but many .mov files are actually 
   // using H.264 codec which is MP4 compatible
@@ -232,7 +235,7 @@ function processVideoUrl(url: string): string {
     console.log('MOV video format detected, ensuring compatibility');
     // In the future, this is where a conversion service would be implemented
   }
-  
+
   return url;
 }
 
@@ -244,12 +247,12 @@ export async function getSimilarExercises(
 ): Promise<ExerciseListItem[]> {
   // Fallback to "full-body" tag if no tags provided
   const searchTags = tags.length > 0 ? tags : ["full-body"];
-  
+
   const cacheKey = cacheKeys.similarExercises(excludeId, searchTags, limit);
   console.log(`🔍 getSimilarExercises called - tags: [${searchTags.join(', ')}], excludeId: ${excludeId}, limit: ${limit}`);
-  
+
   const cached = await cache.get<ExerciseListItem[]>(cacheKey);
-  
+
   if (cached) {
     console.log(`✅ getSimilarExercises using cached result with ${cached.length} exercises`);
     return cached;
@@ -257,10 +260,10 @@ export async function getSimilarExercises(
 
   console.log('📊 getSimilarExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
-  
+
   console.log('Finding similar exercises for tags:', searchTags, 'excluding ID:', excludeId);
   console.log('Exclude ID type:', typeof excludeId);
-  
+
   // Use aggregation pipeline to score exercises by tag similarity
   const pipeline = [
     {
@@ -326,17 +329,17 @@ export async function getSimilarExercises(
       }
     }
   ];
-  
+
   const similarExercises = await db
     .collection('exercises')
     .aggregate(pipeline)
     .toArray() as (ExerciseListItem & { matchingTagsCount: number; similarityScore: number })[];
-  
+
   console.log(`Found ${similarExercises.length} similar exercises with tag scoring:`);
   similarExercises.forEach((exercise, index) => {
     console.log(`  ${index + 1}. ${exercise.name} - ${exercise.matchingTagsCount}/${searchTags.length} tags (${Math.round(exercise.similarityScore * 100)}% similarity) - ID: ${exercise._id}`);
   });
-  
+
   // Check if the current exercise is in the results (it shouldn't be)
   const currentExerciseInResults = similarExercises.find(ex => ex._id === excludeId);
   if (currentExerciseInResults) {
@@ -344,13 +347,13 @@ export async function getSimilarExercises(
   } else {
     console.log('✓ Current exercise successfully excluded from results');
   }
-  
+
   // Remove the scoring fields before returning
   const cleanedExercises = similarExercises.map(({ matchingTagsCount, similarityScore, ...exercise }) => exercise);
-  
+
   console.log(`💾 Caching similar exercises result (${cleanedExercises.length} exercises)`);
   await cache.set(cacheKey, cleanedExercises, cacheTTL.similarExercises);
-  
+
   return cleanedExercises as ExerciseListItem[];
 }
 
@@ -367,40 +370,34 @@ export async function searchExercisesWithAtlas(
   }
 ): Promise<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }> {
   const { status = 'active', userId, fuzzy = searchConfig.fuzzy.enabled } = options || {};
-  const cacheKey = `atlas_search_${query}_${tags.join(',')}_${page}_${limit}_${status}_${userId || 'public'}_${fuzzy}`;
-  
-  if (searchConfig.debug.logQueries) {
-    console.log(`🔍 searchExercisesWithAtlas called - query: "${query}", tags: [${tags.join(', ')}], page: ${page}, limit: ${limit}, status: ${status}, fuzzy: ${fuzzy}`);
-  }
-  
-  // Check cache only if caching is enabled
-  if (searchConfig.performance.enableCaching) {
-    const cached = await cache.get<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }>(cacheKey);
-    
-    if (cached) {
-      if (searchConfig.debug.logQueries) {
-        console.log(`✅ searchExercisesWithAtlas using cached result with ${cached.exercises.length} exercises`);
-      }
-      return cached;
-    }
+
+  // Separate video filter from actual tags
+  const hasVideoFilter = tags.includes('video');
+  const actualTags = tags.filter(tag => tag !== 'video');
+
+  const cacheKey = cacheKeys.searchExercises(query, tags, page, limit) + `_${status}_${userId || 'public'}_atlas`;
+  console.log(`🔍 searchExercisesWithAtlas called - query: "${query}", tags: [${tags.join(', ')}], hasVideoFilter: ${hasVideoFilter}`);
+
+  const cached = await cache.get<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }>(cacheKey);
+
+  if (cached) {
+    console.log(`✅ searchExercisesWithAtlas using cached result with ${cached.exercises.length} exercises`);
+    return cached;
   }
 
-  if (searchConfig.debug.logQueries) {
-    console.log('📊 searchExercisesWithAtlas cache miss - fetching from MongoDB with Atlas Search...');
-  }
+  console.log('📊 searchExercisesWithAtlas cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   const collection = db.collection('exercises');
-  
-  const skip = (page - 1) * limit;
-  
-  // Build Atlas Search pipeline - simplified approach
-  let searchStage: any;
 
-  if (query.trim() || tags.length > 0) {
+  const skip = (page - 1) * limit;
+
+  let searchStage: any = null;
+
+  if (query.trim() || actualTags.length > 0) {
     // Build compound search for query + tags combination
     const mustClauses: any[] = [];
     const shouldClauses: any[] = [];
-    
+
     // Add text search if query provided
     if (query.trim()) {
       shouldClauses.push(
@@ -422,9 +419,9 @@ export async function searchExercisesWithAtlas(
           text: {
             query: query.trim(),
             path: ["text"],
-            fuzzy: fuzzy ? { 
-              maxEdits: query.trim().length <= 5 
-                ? searchConfig.fuzzy.maxEdits.short 
+            fuzzy: fuzzy ? {
+              maxEdits: query.trim().length <= 5
+                ? searchConfig.fuzzy.maxEdits.short
                 : searchConfig.fuzzy.maxEdits.long,
               prefixLength: searchConfig.fuzzy.prefixLength,
               maxExpansions: searchConfig.fuzzy.maxExpansions
@@ -448,29 +445,29 @@ export async function searchExercisesWithAtlas(
         }
       );
     }
-    
-    // Add tag filtering as REQUIRED when tags provided
-    if (tags.length > 0) {
+
+    // Add tag filtering as REQUIRED when tags provided (excluding 'video')
+    if (actualTags.length > 0) {
       mustClauses.push({
         text: {
-          query: tags.join(" "),
+          query: actualTags.join(" "),
           path: ["tags"],  // Only filter by tags array, not categories string
           score: { boost: { value: searchConfig.fieldWeights.tags } }
         }
       });
     }
-    
+
     const compoundQuery: any = {};
-    
+
     if (mustClauses.length > 0) {
       compoundQuery.must = mustClauses;
     }
-    
+
     if (shouldClauses.length > 0) {
       compoundQuery.should = shouldClauses;
       compoundQuery.minimumShouldMatch = searchConfig.behavior.minimumShouldMatch;
     }
-    
+
     searchStage = {
       $search: {
         index: "default",
@@ -489,6 +486,11 @@ export async function searchExercisesWithAtlas(
       filter.status = status;
     } else {
       filter.status = 'active';
+    }
+
+    // Add video filter if needed
+    if (hasVideoFilter) {
+      filter.video_url = { $exists: true, $nin: ['', null] };
     }
 
     const exercises = await collection
@@ -536,32 +538,26 @@ export async function searchExercisesWithAtlas(
   }
 
   // Add status filtering after search
+  const statusMatch: any = {};
   if (status === 'draft' && userId) {
-    pipeline.push({
-      $match: {
-        status: 'draft',
-        submittedBy: userId
-      }
-    });
+    statusMatch.status = 'draft';
+    statusMatch.submittedBy = userId;
   } else if (status === 'active') {
-    pipeline.push({
-      $match: {
-        status: 'active'
-      }
-    });
+    statusMatch.status = 'active';
   } else if (status && ['submitted', 'archived'].includes(status)) {
-    pipeline.push({
-      $match: {
-        status: status
-      }
-    });
+    statusMatch.status = status;
   } else {
-    pipeline.push({
-      $match: {
-        status: 'active'
-      }
-    });
+    statusMatch.status = 'active';
   }
+
+  // Add video filter if needed
+  if (hasVideoFilter) {
+    statusMatch.video_url = { $exists: true, $nin: ['', null] };
+  }
+
+  pipeline.push({
+    $match: statusMatch
+  });
 
   pipeline.push(
     {
@@ -593,76 +589,47 @@ export async function searchExercisesWithAtlas(
   }
 
   try {
-    const exercises = await collection
-      .aggregate(pipeline)
-      .toArray() as (ExerciseListItem & { score: number })[];
+    console.log('Running Atlas search aggregation...');
+    const exercises = await collection.aggregate(pipeline).toArray() as (ExerciseListItem & { score?: number })[];
 
-    // Get total count with separate aggregation
-    const countPipeline = [searchStage];
-    
-    // Add same status filtering for count
-    if (status === 'draft' && userId) {
-      countPipeline.push({
-        $match: {
-          status: 'draft',
-          submittedBy: userId
+    // Get total count using a simpler aggregation (without skip/limit)
+    const countPipeline = [
+      searchStage,
+      {
+        $addFields: {
+          score: { $meta: "searchScore" }
         }
-      });
-    } else if (status === 'active') {
+      }
+    ];
+
+    if (searchConfig.behavior.scoreThreshold !== undefined) {
       countPipeline.push({
         $match: {
-          status: 'active'
-        }
-      });
-    } else if (status && ['submitted', 'archived'].includes(status)) {
-      countPipeline.push({
-        $match: {
-          status: status
-        }
-      });
-    } else {
-      countPipeline.push({
-        $match: {
-          status: 'active'
+          score: { $gte: searchConfig.behavior.scoreThreshold }
         }
       });
     }
-    
+
+    countPipeline.push({
+      $match: statusMatch
+    });
+
     countPipeline.push({
       $count: "total"
     });
 
-    const countResult = await collection
-      .aggregate(countPipeline)
-      .toArray();
-
+    const countResult = await collection.aggregate(countPipeline).toArray();
     const totalCount = countResult.length > 0 ? countResult[0].total : 0;
 
-    if (searchConfig.debug.logScores) {
-      console.log(`Found ${exercises.length} exercises with Atlas Search (total: ${totalCount})`);
-      if (exercises.length > 0) {
-        console.log('Top results with scores:', exercises.slice(0, 3).map(e => `${e.name} (score: ${e.score?.toFixed(2)})`));
-      }
-    }
+    console.log(`Atlas search found ${exercises.length} exercises (total: ${totalCount})`);
 
     const result = { exercises, totalCount };
-    
-    // Only cache if caching is enabled
-    if (searchConfig.performance.enableCaching) {
-      if (searchConfig.debug.logQueries) {
-        console.log(`💾 Caching Atlas Search result (${exercises.length} exercises, ${totalCount} total)`);
-      }
-      await cache.set(cacheKey, result, searchConfig.performance.cacheSeconds);
-    }
+    console.log(`💾 Caching Atlas search result (${exercises.length} exercises, ${totalCount} total)`);
+    await cache.set(cacheKey, result, cacheTTL.searchResults);
 
     return result;
   } catch (error) {
     console.error('Error in searchExercisesWithAtlas:', error);
-    // Fallback to regex search if Atlas Search fails
-    if (searchConfig.debug.enableFallback) {
-      console.log('Falling back to regex search...');
-      return searchExercises(query, tags, page, limit, options);
-    }
     throw error;
   }
 }
@@ -672,19 +639,19 @@ export async function getSearchSuggestions(
   query: string,
   limit: number = searchConfig.autocomplete.maxSuggestions
 ): Promise<string[]> {
-  if (!searchConfig.autocomplete.enabled || 
-      !query.trim() || 
-      query.length < searchConfig.autocomplete.minQueryLength) {
+  if (!searchConfig.autocomplete.enabled ||
+    !query.trim() ||
+    query.length < searchConfig.autocomplete.minQueryLength) {
     return [];
   }
 
   const cacheKey = `suggestions_${query.trim()}_${limit}`;
   console.log(`🔍 getSearchSuggestions called - query: "${query}", limit: ${limit}`);
-  
+
   // Check cache only if caching is enabled
   if (searchConfig.performance.enableCaching) {
     const cached = await cache.get<string[]>(cacheKey);
-    
+
     if (cached) {
       if (searchConfig.debug.logQueries) {
         console.log(`✅ getSearchSuggestions using cached result with ${cached.length} suggestions`);
@@ -708,7 +675,7 @@ export async function getSearchSuggestions(
                 autocomplete: {
                   query: query.trim(),
                   path: "name",
-                  fuzzy: { 
+                  fuzzy: {
                     maxEdits: searchConfig.autocomplete.maxEdits,
                     prefixLength: searchConfig.fuzzy.prefixLength
                   }
@@ -739,11 +706,11 @@ export async function getSearchSuggestions(
       .toArray();
 
     const suggestions = results.map(r => r.name);
-    
+
     if (searchConfig.debug.logScores) {
       console.log(`Found ${suggestions.length} search suggestions`);
     }
-    
+
     // Only cache if caching is enabled
     if (searchConfig.performance.enableCaching) {
       if (searchConfig.debug.logQueries) {
@@ -771,11 +738,16 @@ export async function searchExercises(
   }
 ): Promise<{ exercises: ExerciseListItem[]; totalCount: number }> {
   const { status = 'active', userId } = options || {};
+
+  // Separate video filter from actual tags
+  const hasVideoFilter = tags.includes('video');
+  const actualTags = tags.filter(tag => tag !== 'video');
+
   const cacheKey = cacheKeys.searchExercises(query, tags, page, limit) + `_${status}_${userId || 'public'}`;
-  console.log(`🔍 searchExercises called - query: "${query}", tags: [${tags.join(', ')}], page: ${page}, limit: ${limit}, status: ${status}, userId: ${userId}`);
-  
+  console.log(`🔍 searchExercises called - query: "${query}", tags: [${tags.join(', ')}], page: ${page}, limit: ${limit}, status: ${status}, userId: ${userId}, hasVideoFilter: ${hasVideoFilter}`);
+
   const cached = await cache.get<{ exercises: ExerciseListItem[]; totalCount: number }>(cacheKey);
-  
+
   if (cached) {
     console.log(`✅ searchExercises using cached result with ${cached.exercises.length} exercises`);
     return cached;
@@ -784,12 +756,12 @@ export async function searchExercises(
   console.log('📊 searchExercises cache miss - fetching from MongoDB...');
   const db = await getDatabase();
   const collection = db.collection('exercises');
-  
+
   const skip = (page - 1) * limit;
-  
+
   // Build search pipeline with status filtering
   const searchConditions: any[] = [];
-  
+
   // Status filter - same logic as getAllExercises
   if (status === 'draft' && userId) {
     searchConditions.push({ status: 'draft', submittedBy: userId });
@@ -800,7 +772,7 @@ export async function searchExercises(
   } else {
     searchConditions.push({ status: 'active' });
   }
-  
+
   // Text search conditions
   if (query.trim()) {
     const searchRegex = new RegExp(query.trim(), 'i');
@@ -813,18 +785,25 @@ export async function searchExercises(
       ]
     });
   }
-  
-  // Tag filtering
-  if (tags.length > 0) {
+
+  // Tag filtering (excluding 'video' which is handled separately)
+  if (actualTags.length > 0) {
     searchConditions.push({
-      tags: { $in: tags }
+      tags: { $in: actualTags }
     });
   }
-  
+
+  // Video filter - check for non-empty video_url
+  if (hasVideoFilter) {
+    searchConditions.push({
+      video_url: { $exists: true, $nin: ['', null] }
+    });
+  }
+
   const searchFilter = searchConditions.length > 1 ? { $and: searchConditions } : searchConditions[0] || {};
-  
+
   console.log('Search filter:', JSON.stringify(searchFilter, null, 2));
-  
+
   try {
     const exercises = await collection
       .find(searchFilter)
@@ -845,15 +824,15 @@ export async function searchExercises(
         submittedAt: 1,
       })
       .toArray();
-    
+
     const totalCount = await collection.countDocuments(searchFilter);
-    
+
     console.log(`Found ${exercises.length} exercises matching search criteria (total: ${totalCount})`);
-    
+
     const result = { exercises, totalCount };
     console.log(`💾 Caching searchExercises result (${exercises.length} exercises, ${totalCount} total)`);
     await cache.set(cacheKey, result, cacheTTL.searchResults);
-    
+
     return result;
   } catch (error) {
     console.error('Error in searchExercises:', error);
@@ -865,9 +844,9 @@ export async function searchExercises(
 export async function getPopularTags(limit: number = 10): Promise<{ tag: string; count: number }[]> {
   const cacheKey = cacheKeys.popularTags();
   console.log(`🔍 getPopularTags called - limit: ${limit}`);
-  
+
   const cached = await cache.get<{ tag: string; count: number }[]>(cacheKey);
-  
+
   if (cached) {
     console.log(`✅ getPopularTags using cached result with ${cached.length} tags`);
     return cached;
@@ -875,7 +854,7 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
 
   console.log('📊 getPopularTags cache miss - fetching from MongoDB...');
   const db = await getDatabase();
-  
+
   const pipeline = [
     { $match: { status: 'active' } }, // Only include active exercises
     { $unwind: '$tags' },
@@ -884,18 +863,18 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
     { $limit: limit },
     { $project: { tag: '$_id', count: 1, _id: 0 } }
   ];
-  
+
   const result = await db
     .collection('exercises')
     .aggregate(pipeline)
     .toArray() as { tag: string; count: number }[];
-  
+
   console.log(`💾 Caching popular tags result (${result.length} tags)`);
   if (result.length > 0) {
     console.log('Top tags:', result.slice(0, 5).map(t => `${t.tag} (${t.count})`).join(', '));
   }
   await cache.set(cacheKey, result, cacheTTL.popularTags);
-  
+
   return result;
 }
 
@@ -903,16 +882,16 @@ export async function getPopularTags(limit: number = 10): Promise<{ tag: string;
 export async function debugAtlasSearch(): Promise<any> {
   const db = await getDatabase();
   const collection = db.collection('exercises');
-  
+
   try {
     // Check if we have any active exercises
     const activeCount = await collection.countDocuments({ status: 'active' });
     console.log('Active exercises count:', activeCount);
-    
+
     // Get a sample active exercise
     const sampleExercise = await collection.findOne({ status: 'active' });
     console.log('Sample active exercise:', sampleExercise);
-    
+
     // Try a simple Atlas Search without filters
     const simpleSearchPipeline = [
       {
@@ -935,11 +914,11 @@ export async function debugAtlasSearch(): Promise<any> {
         }
       }
     ];
-    
+
     console.log('Simple search pipeline:', JSON.stringify(simpleSearchPipeline, null, 2));
     const simpleResults = await collection.aggregate(simpleSearchPipeline).toArray();
     console.log('Simple search results:', simpleResults);
-    
+
     // Try regex search for comparison
     const regexResults = await collection.find({
       $and: [
@@ -953,12 +932,12 @@ export async function debugAtlasSearch(): Promise<any> {
         }
       ]
     }).limit(5).toArray();
-    
+
     console.log('Regex search results count:', regexResults.length);
     if (regexResults.length > 0) {
       console.log('First regex result:', regexResults[0].name);
     }
-    
+
     return {
       activeCount,
       sampleExercise: sampleExercise ? { name: sampleExercise.name, status: sampleExercise.status } : null,
@@ -976,29 +955,29 @@ export async function debugAtlasSearch(): Promise<any> {
 export async function checkExerciseCollection(): Promise<{ exists: boolean; count: number; sample?: any }> {
   try {
     const db = await getDatabase();
-    
+
     // Check if collection exists
     const collections = await db.listCollections({ name: 'exercises' }).toArray();
     const exists = collections.length > 0;
-    
+
     if (!exists) {
       return { exists: false, count: 0 };
     }
-    
+
     // Check document count
     const collection = db.collection('exercises');
     const count = await collection.countDocuments({});
-    
+
     // Get a sample document
     let sample = null;
     if (count > 0) {
       sample = await collection.findOne({});
     }
-    
+
     // Check indexes
     const indexes = await collection.indexes();
     console.log('Collection indexes:', indexes);
-    
+
     return { exists, count, sample };
   } catch (error) {
     console.error('Error checking exercise collection:', error);

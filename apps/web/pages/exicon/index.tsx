@@ -388,7 +388,8 @@ export default function ExiconPage({
                     { tag: 'music', label: 'Music' },
                     { tag: 'routine', label: 'Routine' },
                     { tag: 'partner', label: 'Partner' },
-                    { tag: 'game', label: 'Game' }
+                    { tag: 'game', label: 'Game' },
+                    { tag: 'video', label: 'Video' }
                   ].map(({ tag, label }) => (
                     <button
                       key={tag}
