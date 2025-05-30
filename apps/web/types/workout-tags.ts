@@ -192,7 +192,6 @@ export const WORKOUT_TAG_CATEGORIES: Record<WorkoutTagCategory, WorkoutTag[]> = 
     WORKOUT_TAGS.PLAYGROUND_SWING,
     WORKOUT_TAGS.PULL_UP_BAR,
     WORKOUT_TAGS.TIMER,
-    WORKOUT_TAGS.VIDEO,
   ],
   'isolation': [
     WORKOUT_TAGS.CALVES,
@@ -214,6 +213,7 @@ export const WORKOUT_TAG_CATEGORIES: Record<WorkoutTagCategory, WorkoutTag[]> = 
     WORKOUT_TAGS.FLEXIBILITY,
     WORKOUT_TAGS.GAME,
     WORKOUT_TAGS.PARTNER,
+    WORKOUT_TAGS.VIDEO,
   ],
 };
 

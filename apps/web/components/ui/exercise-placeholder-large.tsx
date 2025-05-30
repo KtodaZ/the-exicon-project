@@ -29,7 +29,7 @@ export function ExercisePlaceholderLarge({ title, tags = [], className }: Exerci
         <h1 
           className="font-anton italic text-white text-left leading-tight line-clamp-4 pr-4 w-[60%]"
           style={{
-            fontSize: 'clamp(2rem, 4rem, 6rem)', 
+            fontSize: 'clamp(2rem, 3.2rem, 6rem)', 
             textShadow: '3px 3px 12px rgba(0, 0, 0, 0.9)',
             wordBreak: 'break-word',
             hyphens: 'auto'

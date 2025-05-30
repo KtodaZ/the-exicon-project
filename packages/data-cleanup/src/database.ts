@@ -38,11 +38,11 @@ export class DatabaseManager {
 
   async getExercisesForCleanup(field: string, limit: number = 10): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
-    
+
     // Get exercises that have the field but might need improvement
     const query: any = {};
     query[field] = { $exists: true, $nin: [null, ''] };
-    
+
     return await collection
       .find(query)
       .limit(limit)
@@ -51,23 +51,23 @@ export class DatabaseManager {
 
   async getExercisesForDescriptionGeneration(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
-    
+
     // Get ALL exercises that have 'text' field and haven't been processed yet
     const query = {
       $and: [
-        { 
+        {
           _id: { $nin: excludeIds } // Exclude already processed exercises
         },
-        { 
-          text: { 
-            $exists: true, 
+        {
+          text: {
+            $exists: true,
             $nin: [null, '']
-          } 
+          }
         } // Must have text content
         // Removed description restrictions - process ALL exercises with text
       ]
     };
-    
+
     return await collection
       .find(query as any)
       .limit(limit)
@@ -76,18 +76,18 @@ export class DatabaseManager {
 
   async getExercisesForTagsGeneration(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
-    
+
     // Get exercises that have missing tags
     const query = {
       $and: [
-        { 
+        {
           _id: { $nin: excludeIds } // Exclude already processed exercises
         },
-        { 
-          text: { 
-            $exists: true, 
+        {
+          text: {
+            $exists: true,
             $nin: [null, '']
-          } 
+          }
         }, // Must have text content
         {
           $or: [
@@ -97,7 +97,7 @@ export class DatabaseManager {
         }
       ]
     };
-    
+
     return await collection
       .find(query as any)
       .limit(limit)
@@ -106,22 +106,22 @@ export class DatabaseManager {
 
   async getExercisesForTextFormatting(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
-    
+
     // Get ALL exercises that have text content to format
     const query = {
       $and: [
-        { 
+        {
           _id: { $nin: excludeIds } // Exclude already processed exercises
         },
-        { 
-          text: { 
-            $exists: true, 
+        {
+          text: {
+            $exists: true,
             $nin: [null, '']
-          } 
+          }
         } // Must have text content
       ]
     };
-    
+
     return await collection
       .find(query as any)
       .limit(limit)
@@ -145,11 +145,11 @@ export class DatabaseManager {
 
   async getExercisesForReferenceDetection(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
-    
+
     // Get exercises that have description or text but no referencedExercises field
     const query = {
       $and: [
-        { 
+        {
           _id: { $nin: excludeIds } // Exclude already processed exercises
         },
         {
@@ -163,7 +163,7 @@ export class DatabaseManager {
         }
       ]
     };
-    
+
     return await collection
       .find(query as any)
       .limit(limit)
@@ -172,7 +172,7 @@ export class DatabaseManager {
 
   async updateExerciseReferences(exerciseId: string, referencedExercises: string[], updatedDescription?: string): Promise<void> {
     const collection = this.getExercisesCollection();
-    
+
     const updateDoc: any = {
       $set: {
         referencedExercises,
@@ -191,25 +191,65 @@ export class DatabaseManager {
     );
   }
 
+  async createExerciseReferenceProposal(exerciseId: string, referencedExercises: string[], updatedDescription?: string, confidence: number = 0.8): Promise<void> {
+    // Get the current exercise to compare
+    const collection = this.getExercisesCollection();
+    const currentExercise = await collection.findOne({ _id: exerciseId });
+
+    if (!currentExercise) {
+      throw new Error(`Exercise with id ${exerciseId} not found`);
+    }
+
+    // Create proposal for referencedExercises field
+    const referenceProposal: CleanupProposal = {
+      exerciseId,
+      field: 'referencedExercises',
+      currentValue: currentExercise.referencedExercises || [],
+      proposedValue: referencedExercises,
+      reason: `AI-detected exercise references with ${(confidence * 100).toFixed(1)}% confidence`,
+      confidence,
+      timestamp: new Date(),
+      status: 'pending'
+    };
+
+    await this.saveProposal(referenceProposal);
+
+    // Create proposal for description update if provided
+    if (updatedDescription !== undefined && updatedDescription !== currentExercise.description) {
+      const descriptionProposal: CleanupProposal = {
+        exerciseId,
+        field: 'description',
+        currentValue: currentExercise.description || '',
+        proposedValue: updatedDescription,
+        reason: `Updated description with markdown exercise references`,
+        confidence,
+        timestamp: new Date(),
+        status: 'pending'
+      };
+
+      await this.saveProposal(descriptionProposal);
+    }
+  }
+
   async updateReferencedByFields(): Promise<void> {
     const collection = this.getExercisesCollection();
-    
+
     console.log('🔄 Updating referencedBy fields...');
-    
+
     // First, clear all existing referencedBy fields
     await collection.updateMany(
       {},
       { $unset: { referencedBy: "" } }
     );
-    
+
     // Get all exercises with references
     const exercisesWithRefs = await collection.find({
       referencedExercises: { $exists: true, $not: { $size: 0 } }
     }).toArray();
-    
+
     // Build reverse mapping
     const reverseMap: Map<string, string[]> = new Map();
-    
+
     for (const exercise of exercisesWithRefs) {
       if (exercise.referencedExercises) {
         for (const refSlug of exercise.referencedExercises) {
@@ -220,11 +260,11 @@ export class DatabaseManager {
         }
       }
     }
-    
+
     // Update referencedBy fields
     for (const [slug, referencingIds] of reverseMap.entries()) {
-      // Find the exercise with this slug (we'll need to implement slug generation)
-      const exercise = await collection.findOne({ slug });
+      // Find the exercise with this urlSlug
+      const exercise = await collection.findOne({ urlSlug: slug });
       if (exercise) {
         await collection.updateOne(
           { _id: exercise._id },
@@ -232,35 +272,70 @@ export class DatabaseManager {
         );
       }
     }
-    
+
     console.log(`✅ Updated referencedBy fields for ${reverseMap.size} exercises`);
   }
 
-  async generateAndStoreSlugs(): Promise<void> {
-    const collection = this.getExercisesCollection();
-    
-    console.log('🏷️  Generating and storing slugs for all exercises...');
-    
-    const exercises = await collection.find({}).toArray();
-    
-    for (const exercise of exercises) {
-      const slug = this.generateSlug(exercise.name);
-      await collection.updateOne(
-        { _id: exercise._id },
-        { $set: { slug } }
-      );
+  async getProposalsByType(field: string, status: 'pending' | 'approved' | 'rejected' = 'pending', limit: number = 50): Promise<CleanupProposal[]> {
+    const collection = this.getProposalsCollection();
+    return await collection
+      .find({ field, status })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+  }
+
+  async getExerciseReferenceProposals(status: 'pending' | 'approved' | 'rejected' = 'pending', limit: number = 50): Promise<CleanupProposal[]> {
+    const collection = this.getProposalsCollection();
+    return await collection
+      .find({
+        field: { $in: ['referencedExercises', 'description'] },
+        status
+      })
+      .sort({ timestamp: -1 })
+      .limit(limit)
+      .toArray();
+  }
+
+  async approveProposal(proposalId: string): Promise<void> {
+    const proposalsCollection = this.getProposalsCollection();
+    const exercisesCollection = this.getExercisesCollection();
+
+    const proposal = await proposalsCollection.findOne({ _id: proposalId });
+    if (!proposal) {
+      throw new Error(`Proposal ${proposalId} not found`);
     }
-    
-    console.log(`✅ Generated slugs for ${exercises.length} exercises`);
+
+    // Apply the proposal to the exercise
+    const updateDoc: any = {
+      $set: {
+        [proposal.field]: proposal.proposedValue,
+        updated_at: new Date()
+      }
+    };
+
+    await exercisesCollection.updateOne(
+      { _id: proposal.exerciseId },
+      updateDoc
+    );
+
+    // Mark proposal as approved
+    await proposalsCollection.updateOne(
+      { _id: proposalId },
+      {
+        $set: {
+          status: 'approved',
+          appliedAt: new Date()
+        }
+      }
+    );
   }
 
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars except spaces and hyphens
-      .trim()
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-'); // Replace multiple hyphens with single
+  async rejectProposal(proposalId: string): Promise<void> {
+    const collection = this.getProposalsCollection();
+    await collection.updateOne(
+      { _id: proposalId },
+      { $set: { status: 'rejected' } }
+    );
   }
-
 }

@@ -9,6 +9,7 @@ export interface Exercise {
   created_at?: Date;
   updated_at?: Date;
   status?: string;
+  urlSlug?: string;                // URL-friendly slug from the main database
   // Exercise reference fields
   referencedExercises?: string[]; // Array of slugs that this exercise references
   referencedBy?: string[];        // Array of slugs that reference this exercise

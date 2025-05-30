@@ -3,8 +3,6 @@ import { useRouter } from 'next/router';
 import { Search, ExternalLink, X } from 'lucide-react';
 import { Input } from './input';
 import { useDebounce } from '@/lib/hooks/use-debounce';
-import Image from 'next/image';
-import { ExercisePlaceholder } from './exercise-placeholder';
 
 interface SearchResult {
     _id: string;
@@ -173,25 +171,6 @@ export function ExpandableSearch({
                                     className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="flex-shrink-0 w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                                            {exercise.image_url ? (
-                                                <Image
-                                                    src={exercise.image_url}
-                                                    alt={exercise.name}
-                                                    width={48}
-                                                    height={48}
-                                                    className="object-cover w-full h-full"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <ExercisePlaceholder
-                                                        title={exercise.name}
-                                                        tags={exercise.tags}
-                                                        className="!w-8 !h-8"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
                                         <div className="flex-1 text-left min-w-0">
                                             <div className="font-medium text-gray-900 dark:text-white truncate">
                                                 {exercise.name}
@@ -282,25 +261,6 @@ export function ExpandableSearch({
                                             style={{ height: '60px' }}
                                         >
                                             <div className="flex items-center gap-3 h-full">
-                                                <div className="flex-shrink-0 w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                                                    {exercise.image_url ? (
-                                                        <Image
-                                                            src={exercise.image_url}
-                                                            alt={exercise.name}
-                                                            width={48}
-                                                            height={48}
-                                                            className="object-cover w-full h-full"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center">
-                                                            <ExercisePlaceholder
-                                                                title={exercise.name}
-                                                                tags={exercise.tags}
-                                                                className="!w-8 !h-8"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
                                                 <div className="flex-1 text-left min-w-0">
                                                     <div className="font-medium text-gray-900 dark:text-white truncate text-sm">
                                                         {exercise.name}

@@ -3,6 +3,7 @@ import { Exercise, ExerciseListItem, ExerciseDetail, ExerciseStatus } from '@/li
 import { cache, cacheKeys, cacheTTL } from '@/lib/redis';
 import { searchConfig } from '@/lib/config/search';
 import { ObjectId } from 'mongodb';
+import { invalidateCachesOnExerciseCreate } from '@/lib/cache-invalidation';
 
 // Utility function to safely convert string to ObjectId
 function toObjectId(id: string | ObjectId): ObjectId {
@@ -369,6 +370,11 @@ export async function searchExercisesWithAtlas(
     fuzzy?: boolean;
   }
 ): Promise<{ exercises: (ExerciseListItem & { score?: number })[]; totalCount: number }> {
+  // LOG INCOMING PARAMETERS FOR DIAGNOSTICS
+  console.log('[searchExercisesWithAtlas] Received query:', query);
+  console.log('[searchExercisesWithAtlas] Received tags:', JSON.stringify(tags));
+  console.log('[searchExercisesWithAtlas] Received options:', JSON.stringify(options));
+
   const { status = 'active', userId, fuzzy = searchConfig.fuzzy.enabled } = options || {};
 
   // Separate video filter from actual tags
@@ -400,7 +406,8 @@ export async function searchExercisesWithAtlas(
 
     // Add text search if query provided
     if (query.trim()) {
-      shouldClauses.push(
+      // Original hierarchical structure for other queries
+      const otherFieldsShouldClauses: any[] = [
         {
           text: {
             query: query.trim(),
@@ -436,44 +443,86 @@ export async function searchExercisesWithAtlas(
             score: { boost: { value: searchConfig.fieldWeights.tags } }
           }
         },
-        {
-          text: {
-            query: query.trim(),
-            path: ["aliases.name"],
-            score: { boost: { value: searchConfig.fieldWeights.aliases } }
+        // Optionally, re-include the general text search on aliases.name here with a moderate boost
+        // if you still want non-phrase alias matches to contribute, but less than the primary phrase:
+        // {
+        //   text: {
+        //     query: query.trim(),
+        //     path: ["aliases.name"],
+        //     score: { boost: { value: searchConfig.fieldWeights.aliases / 2 } } // e.g., half of original alias weight
+        //   }
+        // }
+      ];
+
+      searchStage = {
+        $search: {
+          index: "default",
+          compound: {
+            should: [
+              { // Clause 1: ALIAS PHRASE (very high priority)
+                phrase: {
+                  query: query.trim(), // Reverted from hardcoded
+                  path: "aliases.name",
+                  slop: 0,
+                  score: { boost: { value: 100 } } // Using a high, fixed-style boost
+                }
+              },
+              { // Clause 2: ALL OTHER FIELDS (as a nested compound)
+                compound: {
+                  should: otherFieldsShouldClauses,
+                  minimumShouldMatch: searchConfig.behavior.minimumShouldMatch // Apply original minimumShouldMatch here
+                }
+              }
+            ],
+            minimumShouldMatch: 1 // For the outer group: match alias OR other fields
           }
         }
-      );
-    }
-
-    // Add tag filtering as REQUIRED when tags provided (excluding 'video')
-    if (actualTags.length > 0) {
-      mustClauses.push({
-        text: {
-          query: actualTags.join(" "),
-          path: ["tags"],  // Only filter by tags array, not categories string
-          score: { boost: { value: searchConfig.fieldWeights.tags } }
-        }
-      });
-    }
-
-    const compoundQuery: any = {};
-
-    if (mustClauses.length > 0) {
-      compoundQuery.must = mustClauses;
-    }
-
-    if (shouldClauses.length > 0) {
-      compoundQuery.should = shouldClauses;
-      compoundQuery.minimumShouldMatch = searchConfig.behavior.minimumShouldMatch;
-    }
-
-    searchStage = {
-      $search: {
-        index: "default",
-        compound: compoundQuery
+      };
+      // }
+    } else {
+      // No search criteria - use regular MongoDB query
+      const filter: any = {};
+      if (status === 'draft' && userId) {
+        filter.status = 'draft';
+        filter.submittedBy = userId;
+      } else if (status === 'active') {
+        filter.status = 'active';
+      } else if (status && ['submitted', 'archived'].includes(status)) {
+        filter.status = status;
+      } else {
+        filter.status = 'active';
       }
-    };
+
+      // Add video filter if needed
+      if (hasVideoFilter) {
+        filter.video_url = { $exists: true, $nin: ['', null] };
+      }
+
+      const exercises = await collection
+        .find(filter)
+        .sort({ publishedAt: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .project<ExerciseListItem>({
+          _id: 1,
+          name: 1,
+          description: 1,
+          tags: 1,
+          urlSlug: 1,
+          difficulty: 1,
+          video_url: 1,
+          image_url: 1,
+          status: 1,
+          submittedBy: 1,
+          submittedAt: 1,
+        })
+        .toArray();
+
+      const totalCount = await collection.countDocuments(filter);
+      const result = { exercises, totalCount };
+      await cache.set(cacheKey, result, cacheTTL.searchResults);
+      return result;
+    }
   } else {
     // No search criteria - use regular MongoDB query
     const filter: any = {};
@@ -1070,8 +1119,13 @@ export async function createExercise(exerciseData: {
     console.log('✅ Exercise created successfully:', exerciseId);
 
     // Clear relevant caches
-    await cache.delete(cacheKeys.allExercises(1, 12));
-    console.log('🗑️ Cleared exercises cache');
+    await invalidateCachesOnExerciseCreate({
+      _id: exerciseId,
+      urlSlug: finalUrlSlug,
+      tags: exerciseData.tags,
+      name: exerciseData.name,
+      status: exerciseData.status
+    });
 
     // Return the created exercise with the string ID
     const exercise: Exercise = {

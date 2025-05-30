@@ -102,11 +102,11 @@ export const searchConfig: SearchConfig = {
   },
 
   fieldWeights: {
-    name: 3.0,                  // Exercise names are most important
+    name: 5.0,                  // Exercise names are most important
     description: 2.0,           // Descriptions are high priority
     text: 1.0,                  // Full text is lowest priority (where "must"→"music" happens)
     tags: 2.5,                  // Tags are very important
-    aliases: 2.5,               // Alternative names are very important
+    aliases: 5.0,               // Alternative names are very important
   },
 
   behavior: {
@@ -122,13 +122,13 @@ export const searchConfig: SearchConfig = {
   },
 
   performance: {
-    enableCaching: true,        // Cache results for better performance
+    enableCaching: false,        // Cache results for better performance
     cacheSeconds: 300,          // Cache for 5 minutes
   },
 
   debug: {
-    logQueries: false,          // Set to true when debugging search issues
-    logScores: false,           // Set to true to see relevance scores
+    logQueries: true,          // Set to true when debugging search issues
+    logScores: true,           // Set to true to see relevance scores
     enableFallback: true,       // Safe fallback if Atlas Search fails
   },
 };

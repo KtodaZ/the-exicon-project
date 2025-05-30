@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExerciseStatus, Exercise, Alias } from '@/lib/models/exercise';
 import { Textarea } from '../../components/ui/textarea';
 import { TagsAutocomplete } from '../../components/ui/tags-autocomplete';
+import { ExerciseAutocomplete } from '../../components/ui/exercise-autocomplete';
 import { toast } from 'sonner';
 
 interface ExerciseFormData {
@@ -334,13 +335,10 @@ export default function EditExercisePage() {
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                     Short Description *
                   </label>
-                  <Textarea
-                    id="description"
+                  <ExerciseAutocomplete
                     value={formData.description}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('description', e.target.value)}
-                    placeholder="Brief description of the exercise..."
-                    rows={3}
-                    required
+                    onChange={(value) => handleInputChange('description', value)}
+                    placeholder="Brief description of the exercise (use @ to reference other exercises)"
                   />
                 </div>
 
@@ -348,12 +346,10 @@ export default function EditExercisePage() {
                   <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
                     Detailed Instructions
                   </label>
-                  <Textarea
-                    id="text"
+                  <ExerciseAutocomplete
                     value={formData.text}
-                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange('text', e.target.value)}
-                    placeholder="Detailed instructions for performing the exercise..."
-                    rows={5}
+                    onChange={(value) => handleInputChange('text', value)}
+                    placeholder="Detailed instructions for performing the exercise (use @ to reference other exercises)"
                   />
                 </div>
 

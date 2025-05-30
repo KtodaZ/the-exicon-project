@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ExerciseStatus, Alias } from '@/lib/models/exercise';
 import { Textarea } from '@/components/ui/textarea';
 import { TagsAutocomplete } from '@/components/ui/tags-autocomplete';
+import { ExerciseAutocomplete } from '@/components/ui/exercise-autocomplete';
 import { toast } from 'sonner';
 
 interface ExerciseFormData {
@@ -351,13 +352,10 @@ export default function SubmitExercise() {
                     <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                       Description *
                     </label>
-                    <Textarea
-                      id="description"
+                    <ExerciseAutocomplete
                       value={formData.description}
-                      onChange={(e) => handleInputChange('description', e.target.value)}
-                      placeholder="Briefly describe the exercise"
-                      rows={3}
-                      required
+                      onChange={(value) => handleInputChange('description', value)}
+                      placeholder="Briefly describe the exercise (use @ to reference other exercises)"
                     />
                   </div>
 
@@ -365,13 +363,10 @@ export default function SubmitExercise() {
                     <label htmlFor="text" className="block text-sm font-medium text-gray-700 mb-1">
                       Exercise Instructions *
                     </label>
-                    <Textarea
-                      id="text"
+                    <ExerciseAutocomplete
                       value={formData.text}
-                      onChange={(e) => handleInputChange('text', e.target.value)}
-                      placeholder="Provide detailed instructions for the exercise"
-                      rows={6}
-                      required
+                      onChange={(value) => handleInputChange('text', value)}
+                      placeholder="Provide detailed instructions for the exercise (use @ to reference other exercises)"
                     />
                   </div>
 

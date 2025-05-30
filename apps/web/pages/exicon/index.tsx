@@ -230,29 +230,40 @@ export default function ExiconPage({
       <div className="min-h-screen bg-gray-100 dark:bg-black">
         <div className="container mx-auto py-6">
           <div className="mb-4 pt-4">
-            <div className="flex justify-between items-start">
+            {/* Mobile Layout */}
+            <div className="block lg:hidden text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
+                Exercise Directory
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4">
+                Explore all exercises. Created by PAX, for PAX.
+              </p>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex justify-between items-start">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                   Exercise Directory
                 </h1>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-base text-gray-600 dark:text-gray-300">
                   Explore all exercises. Created by PAX, for PAX.
                 </p>
               </div>
               {session?.user ? (
                 (permissions?.canSubmitExercise || permissions?.canCreateExercise) && (
                   <Link href="/submit-exercise">
-                    <Button className="flex items-center gap-2">
+                    <Button variant="outline" className="flex items-center gap-2">
                       <Plus className="h-4 w-4" />
-                      Submit Exercise
+                      Create Exercises
                     </Button>
                   </Link>
                 )
               ) : (
                 <Link href="/auth/sign-up">
-                  <Button className="flex items-center gap-2">
+                  <Button variant="outline" className="flex items-center gap-2">
                     <Plus className="h-4 w-4" />
-                    Submit Exercise
+                    Create Exercises
                   </Button>
                 </Link>
               )}
@@ -486,7 +497,36 @@ export default function ExiconPage({
 
           {/* Results section */}
           <div>
-            <div className="flex justify-between items-center mb-6">
+            {/* Mobile Layout */}
+            <div className="block lg:hidden mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Exercises
+                </h2>
+                {/* Simple plus icon button on mobile */}
+                {session?.user ? (
+                  (permissions?.canSubmitExercise || permissions?.canCreateExercise) && (
+                    <Link href="/submit-exercise">
+                      <Button size="sm" className="flex items-center gap-1 p-2">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  )
+                ) : (
+                  <Link href="/auth/sign-up">
+                    <Button size="sm" className="flex items-center gap-1 p-2">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {`${currentTotalCount} found`}
+              </span>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Exercises
               </h2>

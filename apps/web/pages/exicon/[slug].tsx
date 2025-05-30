@@ -12,8 +12,30 @@ import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
 import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-large';
+import { ExerciseTextRenderer } from '@/components/ui/exercise-text-renderer';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 import { Settings } from 'lucide-react';
+
+// Helper function to convert text to title case
+function toTitleCase(str: string): string {
+  // Articles, prepositions, and conjunctions that should remain lowercase (unless first word)
+  const smallWords = [
+    'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'if', 'in', 'is', 'it',
+    'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet'
+  ];
+
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map((word, index) => {
+      // Always capitalize first word, or if not a small word
+      if (index === 0 || !smallWords.includes(word)) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      return word;
+    })
+    .join(' ');
+}
 
 // Custom hook to get window size
 function useWindowSize() {
@@ -47,7 +69,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
   const { width } = useWindowSize();
   const { data: session } = useSession();
   const { data: permissions } = usePermissions();
-  
+
   // Determine how many exercises to show based on screen size
   const getExerciseCount = () => {
     if (!width) return 8; // Default for SSR
@@ -77,25 +99,25 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
     );
   }
 
-  const { 
-    name, 
+  const {
+    name,
     aliases,
-    tags, 
-    description, 
-    text, 
-    video_url, 
+    tags,
+    description,
+    text,
+    video_url,
     image_url,
-    author, 
+    author,
     authorName,
-    similarExercises 
+    similarExercises
   } = exercise;
 
   const exerciseCount = getExerciseCount();
-  
+
   // Check if this is one of the placeholder image URLs or null
-  const shouldShowPlaceholder = !image_url || 
-                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
-                               image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
+  const shouldShowPlaceholder = !image_url ||
+    image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6693d8938e395d22def508d7.png' ||
+    image_url === 'https://storage.googleapis.com/msgsndr/SrfvOYstGSlBjAXxhvwX/media/6698299f33f2d9f5c28dcb76.png';
 
   return (
     <>
@@ -122,12 +144,12 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 {aliases && aliases.length > 0 && (
                   <div className="mt-2">
                     {(() => {
-                      const uniqueAliases = aliases.filter(alias => 
+                      const uniqueAliases = aliases.filter(alias =>
                         alias.name.trim().toLowerCase() !== name.trim().toLowerCase()
                       );
                       return uniqueAliases.length > 0 && (
                         <span className="text-lg text-gray-600 dark:text-gray-400">
-                          Also known as: {uniqueAliases.map(alias => alias.name).join(', ')}
+                          Also known as: {uniqueAliases.map(alias => toTitleCase(alias.name)).join(', ')}
                         </span>
                       );
                     })()}
@@ -143,7 +165,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 </Link>
               )}
             </div>
-            
+
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-12">
               {tags.map(tag => (
@@ -180,18 +202,19 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 )}
               </div>
             </div>
-            
+
             {/* Right column: Content and meta */}
             <div className="lg:order-2">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
                 Description
               </h2>
               <div className="prose dark:prose-invert max-w-[65ch]">
-                <p className="text-gray-700 dark:text-gray-300 mb-8 whitespace-pre-line text-lg leading-relaxed">
-                  {text?.replace(/[^\x20-\x7E\n\r]/g, ' ')}
-                </p>
+                <ExerciseTextRenderer
+                  text={text || description || ''}
+                  className="text-gray-700 dark:text-gray-300 mb-8 text-lg leading-relaxed"
+                />
               </div>
-              
+
               {/* Author */}
               {(authorName || (author && author !== 'N/A')) && (
                 <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
@@ -202,7 +225,7 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
               )}
             </div>
           </div>
-          
+
           {/* Similar exercises */}
           {similarExercises && similarExercises.length > 0 && (
             <div className="mt-16">
@@ -224,23 +247,23 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { slug } = context.params as { slug: string };
-  
+
   console.log('getServerSideProps called with slug:', slug);
-  
+
   try {
     // Directly call the database function instead of making an HTTP request
     const exercise = await getExerciseBySlug(slug);
-    
+
     console.log('Exercise fetched successfully:', exercise?.name || 'null');
-    
+
     return {
-      props: { 
-        exercise: exercise ? JSON.parse(JSON.stringify(exercise)) : null 
+      props: {
+        exercise: exercise ? JSON.parse(JSON.stringify(exercise)) : null
       }
     };
   } catch (error) {
     console.error(`Error fetching exercise with slug ${slug}:`, error);
-    
+
     return {
       props: { exercise: null }
     };

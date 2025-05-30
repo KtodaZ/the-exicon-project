@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { auth } from '@/lib/auth';
 import { ExerciseStatus } from '@/lib/models/exercise';
 import { getDatabase } from '@/lib/mongodb';
+import { invalidateExerciseCaches, invalidateCachesOnExerciseDelete } from '@/lib/cache-invalidation';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -47,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (exerciseId) {
         console.log('Looking for exercise with ID:', exerciseId);
         console.log('ID type:', typeof exerciseId);
-        
+
         const exercise = await exercisesCollection.findOne({
           _id: exerciseId as string
         });
@@ -174,6 +175,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         _id: exerciseId
       });
 
+      // Clear relevant caches to ensure fresh data is fetched
+      if (updatedExercise) {
+        await invalidateExerciseCaches(
+          {
+            _id: updatedExercise._id.toString(),
+            urlSlug: updatedExercise.urlSlug,
+            tags: updatedExercise.tags,
+            name: updatedExercise.name
+          },
+          {
+            tagsUpdated: !!updateData.tags,
+            clearSimilarExercises: true
+          }
+        );
+      }
+
       res.status(200).json({
         success: true,
         exercise: {
@@ -212,7 +229,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Users can delete their own drafts, admins can delete any exercise
       const isOwnerDraft = exercise.submittedBy === session.user.id && exercise.status === 'draft';
-      
+
       if (!canDelete?.success && !isOwnerDraft) {
         return res.status(403).json({ error: 'You can only delete your own draft exercises' });
       }
@@ -225,6 +242,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (deleteResult.deletedCount === 0) {
         return res.status(404).json({ error: 'Exercise not found' });
       }
+
+      // Invalidate caches for the deleted exercise
+      await invalidateCachesOnExerciseDelete({
+        _id: exercise._id.toString(),
+        urlSlug: exercise.urlSlug,
+        tags: exercise.tags,
+        name: exercise.name
+      });
 
       res.status(200).json({
         success: true,
