@@ -12,6 +12,7 @@ import { ExerciseCard } from '@/components/exercise-card';
 import { ChevronLeft } from 'lucide-react';
 import { VideoPlayer } from '@/components/video-player';
 import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-large';
+import { ExercisePlaceholder } from '@/components/ui/exercise-placeholder';
 import { ExerciseTextRenderer } from '@/components/ui/exercise-text-renderer';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 import { Settings } from 'lucide-react';
@@ -188,7 +189,16 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
                 {video_url ? (
                   <VideoPlayer src={video_url} posterImage={image_url || undefined} />
                 ) : shouldShowPlaceholder ? (
-                  <ExercisePlaceholderLarge title={name} tags={tags} />
+                  <>
+                    {/* Mobile/Tablet: Regular size placeholder */}
+                    <div className="block lg:hidden w-full h-full">
+                      <ExercisePlaceholder title={name} tags={tags} />
+                    </div>
+                    {/* Desktop: Large placeholder */}
+                    <div className="hidden lg:block w-full h-full">
+                      <ExercisePlaceholderLarge title={name} tags={tags} />
+                    </div>
+                  </>
                 ) : image_url ? (
                   <Image
                     src={image_url}

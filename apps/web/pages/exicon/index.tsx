@@ -440,7 +440,7 @@ export default function ExiconPage({
               <div className="mt-6 animate-in slide-in-from-top-4 duration-500">
                 <div className="flex flex-col items-center">
                   <div className="max-w-6xl w-full">
-                    <div className="grid grid-cols-6 gap-6">
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-6">
                       {[
                         ['fundamentals', WORKOUT_TAG_CATEGORIES['fundamentals'], 'Fundamentals'],
                         ['exercises', WORKOUT_TAG_CATEGORIES['exercises'], 'Exercises'],
@@ -453,16 +453,16 @@ export default function ExiconPage({
                         const key = categoryKey as string;
                         return (
                           <div key={key} className="flex flex-col">
-                            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+                            <h3 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 text-center mb-2 lg:mb-3 pb-1 lg:pb-2 border-b border-gray-200 dark:border-gray-600">
                               {displayName}
                             </h3>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-1 lg:gap-2">
                               <TagList
                                 tags={categoryTags}
                                 activeTags={activeTags}
                                 onTagClick={toggleTag}
                                 showCounts={false}
-                                className="flex flex-col gap-2"
+                                className="flex flex-col gap-1 lg:gap-2"
                               />
                             </div>
                           </div>

@@ -23,7 +23,7 @@ export default function Home({ isConnected }: HomeProps) {
               The Exicon Project
             </h1>
             <p className="text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto mb-6 font-medium">
-              An open source and open idea exercise lexicon for F3 Qs — built by the PAX, for the PAX.
+            An open-source, community-driven exercise lexicon for F3 workouts — created by the PAX, for the PAX.
             </p>
           </div>
 
@@ -55,7 +55,7 @@ export default function Home({ isConnected }: HomeProps) {
                       </svg>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 flex-1">
-                      Find detailed instructions, videos, and tips for hundreds of exercises to enhance your workout routine.
+                    Find detailed instructions, videos, and tips for hundreds of exercises to enhance your Qs.
                     </p>
                     <div className="mt-6">
                       <Button variant="red" className="w-full">
@@ -94,7 +94,7 @@ export default function Home({ isConnected }: HomeProps) {
                       </svg>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 flex-1">
-                      Understand the specific terms and language used in fitness and training contexts.
+                      Understand the specific terms and language used in F3.
                     </p>
                     <div className="mt-6">
                       <Button variant="outline" className="w-full" disabled>
