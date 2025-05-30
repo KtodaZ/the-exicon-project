@@ -35,7 +35,7 @@ const fetchExercises = async ({ pageParam = 1, queryKey }: any) => {
   const [, searchQuery, activeTags] = queryKey;
   const queryParams = new URLSearchParams();
   queryParams.append('page', pageParam.toString());
-  queryParams.append('limit', '12');
+  queryParams.append('limit', '24');
 
   if (searchQuery) {
     queryParams.append('query', searchQuery);
@@ -615,12 +615,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     if (searchQuery || selectedTags.length > 0) {
       // Use search function if there's a query or tags - explicitly pass status: 'active'
-      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 12, {
+      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 18, {
         status: 'active'
       });
     } else {
       // Use getAllExercises for the default case - explicitly pass status: 'active'
-      exercisesData = await getAllExercises(currentPage, 12, {
+      exercisesData = await getAllExercises(currentPage, 18, {
         status: 'active'
       });
     }
