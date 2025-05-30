@@ -14,13 +14,15 @@ interface ExerciseAutocompleteProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  maxLength?: number;
 }
 
 export function ExerciseAutocomplete({
   value,
   onChange,
   placeholder = "Type @ to mention an exercise...",
-  className
+  className,
+  maxLength
 }: ExerciseAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<Exercise[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -168,7 +170,18 @@ export function ExerciseAutocomplete({
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value);
+    const newValue = e.target.value;
+    
+    // Enforce character limit if provided
+    // Allow the change if:
+    // 1. No maxLength is set, OR
+    // 2. New value is within limit, OR  
+    // 3. New value is shorter than current (allowing deletions)
+    if (maxLength && newValue.length > maxLength && newValue.length > value.length) {
+      return; // Only prevent if exceeding limit AND adding characters
+    }
+    
+    onChange(newValue);
   };
 
   // Handle cursor position change
@@ -207,6 +220,7 @@ export function ExerciseAutocomplete({
           placeholder={placeholder}
           className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] font-mono text-sm"
           rows={6}
+          maxLength={maxLength}
         />
 
         {/* Dropdown */}
@@ -235,9 +249,16 @@ export function ExerciseAutocomplete({
       </div>
 
       {/* Help text */}
-      <p className="text-xs text-gray-500 mt-1">
-        Type @ followed by an exercise name to create a reference. Example: @burpee
-      </p>
+      <div className="flex justify-between items-center mt-1">
+        <p className="text-xs text-gray-500">
+          Type @ followed by an exercise name to create a reference. Example: @burpee
+        </p>
+        {maxLength && (
+          <p className={`text-xs ${value.length > maxLength * 0.9 ? 'text-orange-500' : 'text-gray-500'}`}>
+            {value.length}/{maxLength}
+          </p>
+        )}
+      </div>
 
       {/* Preview of references */}
       {value && value.includes('[') && value.includes('](@') && (

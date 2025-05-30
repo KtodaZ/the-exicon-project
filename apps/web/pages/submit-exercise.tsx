@@ -252,8 +252,8 @@ export default function SubmitExercise() {
       </Head>
       
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-2xl mx-auto p-6">
-          <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="max-w-2xl mx-auto px-0 sm:px-6 py-6">
+          <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow-md p-4 sm:p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Submit Exercise</h1>
             
             {error && (
@@ -356,6 +356,7 @@ export default function SubmitExercise() {
                       value={formData.description}
                       onChange={(value) => handleInputChange('description', value)}
                       placeholder="Briefly describe the exercise (use @ to reference other exercises)"
+                      maxLength={120}
                     />
                   </div>
 
