@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Badge } from './badge';
 import { ExerciseTooltip } from './exercise-tooltip';
+import { ExerciseBottomSheet } from './exercise-bottom-sheet';
 
 interface ExerciseTextRendererProps {
   text: string;
@@ -10,6 +11,21 @@ interface ExerciseTextRendererProps {
 }
 
 export function ExerciseTextRenderer({ text, className, showTooltips = true }: ExerciseTextRendererProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+
   // Parse the text and render exercise references as clickable links with tooltips
   const renderTextWithReferences = (content: string): React.ReactNode => {
     const parts: React.ReactNode[] = [];
@@ -45,13 +61,24 @@ export function ExerciseTextRenderer({ text, className, showTooltips = true }: E
           </Link>
         );
 
-        if (showTooltips) {
-          parts.push(
-            <ExerciseTooltip key={`tooltip-${startIndex}`} slug={slug}>
-              {linkElement}
-            </ExerciseTooltip>
-          );
+        if (showTooltips && isClient) {
+          if (isMobile) {
+            // Mobile: use bottom sheet
+            parts.push(
+              <ExerciseBottomSheet key={`bottomsheet-${startIndex}`} slug={slug}>
+                {exerciseName}
+              </ExerciseBottomSheet>
+            );
+          } else {
+            // Desktop: use tooltip
+            parts.push(
+              <ExerciseTooltip key={`tooltip-${startIndex}`} slug={slug}>
+                {linkElement}
+              </ExerciseTooltip>
+            );
+          }
         } else {
+          // Fallback for SSR or when tooltips are disabled
           parts.push(
             <span key={`link-${startIndex}`}>
               {linkElement}
