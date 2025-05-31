@@ -71,9 +71,16 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
       </button>
 
       {/* Title */}
-      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 pr-8 leading-tight break-words">
+      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 pr-8 leading-tight break-words">
         {item.title}
       </h3>
+
+      {/* Aliases */}
+      {item.aliases && item.aliases.length > 0 && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 pr-8 italic">
+          AKA: {item.aliases.map(alias => alias.name).join(', ')}
+        </p>
+      )}
 
       {/* Description - natural height */}
       <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm break-words lexicon-interactive">

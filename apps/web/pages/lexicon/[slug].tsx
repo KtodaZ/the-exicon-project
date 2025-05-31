@@ -5,7 +5,9 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { LexiconTextRenderer } from '@/components/ui/lexicon-text-renderer';
 import { LexiconItem, getLexiconItemBySlug } from '@/lib/api/lexicon';
-import { ArrowLeft, Copy, BookOpen } from 'lucide-react';
+import { useSession } from '@/lib/auth-client';
+import { usePermissions } from '@/lib/hooks/use-permissions';
+import { ArrowLeft, Copy, BookOpen, Edit } from 'lucide-react';
 
 interface LexiconDetailPageProps {
   item: LexiconItem | null;
@@ -14,6 +16,8 @@ interface LexiconDetailPageProps {
 
 export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps) {
   const [copied, setCopied] = useState(false);
+  const { data: session } = useSession();
+  const { data: permissions } = usePermissions();
 
   if (!item) {
     return (
@@ -162,6 +166,16 @@ export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps
                     <Copy className="h-4 w-4" />
                     {copied ? 'Copied!' : 'Copy Definition'}
                   </Button>
+                  
+                  {/* Edit button for admins */}
+                  {session?.user && permissions?.canEditLexicon && (
+                    <Link href={`/edit-lexicon/${item._id}`}>
+                      <Button variant="outline" className="flex items-center gap-2">
+                        <Edit className="h-4 w-4" />
+                        Edit
+                      </Button>
+                    </Link>
+                  )}
                   
                   <Link href="/lexicon">
                     <Button variant="outline" className="flex items-center gap-2">

@@ -23,7 +23,9 @@
     "lexicon:bulk-approve": "node dist/lexicon-bulk-approve.js",
     "lexicon:aliases": "node dist/lexicon-alias-cleanup.js",
     "lexicon:bulk-aliases": "node dist/lexicon-bulk-aliases.js",
-    "lexicon:aliases-review": "node dist/lexicon-alias-review.js"
+    "lexicon:aliases-review": "node dist/lexicon-alias-review.js",
+    "lexicon:fix-linebreaks": "node dist/lexicon-fix-linebreaks.js",
+    "lexicon:fix-linebreaks-apply": "node dist/lexicon-fix-linebreaks.js --fix"
   },
   "dependencies": {
     "dotenv": "^16.5.0",
