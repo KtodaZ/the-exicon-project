@@ -8,7 +8,7 @@ import { CombinedSearchDropdown } from "@/components/ui/combined-search-dropdown
 export interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onSearch?: (value: string) => void;
   buttonText?: string;
-  buttonVariant?: "default" | "secondary" | "outline" | "ghost" | "link" | "destructive" | "red";
+  buttonVariant?: "default" | "secondary" | "outline" | "outline-red" | "ghost" | "link" | "destructive" | "red";
   showButton?: boolean;
   iconSize?: number;
   rotatingPlaceholders?: string[];

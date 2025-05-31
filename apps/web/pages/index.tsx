@@ -3,6 +3,7 @@ import Link from "next/link";
 import Head from "next/head";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GetStaticProps } from 'next';
+import { Dumbbell } from 'lucide-react';
 
 interface HomeProps {
   isConnected?: boolean;
@@ -39,26 +40,13 @@ export default function Home({ isConnected }: HomeProps) {
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
                     <div className="h-40 md:h-60 bg-gray-200 dark:bg-gray-800 rounded-md mb-4 flex items-center justify-center">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-20 w-20 text-gray-400 dark:text-gray-600" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={1.5} 
-                          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" 
-                        />
-                      </svg>
+                      <Dumbbell className="h-20 w-20 text-gray-400 dark:text-gray-600" />
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 flex-1">
                     Find detailed instructions, videos, and tips for hundreds of exercises to enhance your Qs.
                     </p>
                     <div className="mt-6">
-                      <Button variant="red" className="w-full">
+                      <Button variant="outline-red" className="w-full">
                         Browse Exercises
                       </Button>
                     </div>
@@ -97,7 +85,7 @@ export default function Home({ isConnected }: HomeProps) {
                       Learn F3 terminology, from PAX to Q to BD. Your comprehensive guide to the language of F3.
                     </p>
                     <div className="mt-6">
-                      <Button variant="red" className="w-full">
+                      <Button variant="outline-red" className="w-full">
                         Browse Terminology
                       </Button>
                     </div>
