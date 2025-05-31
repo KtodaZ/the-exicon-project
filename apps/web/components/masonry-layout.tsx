@@ -164,7 +164,7 @@ export function MasonryLayout({
       window.removeEventListener('resize', handleResize);
       clearTimeout(scrollTimeout);
     };
-  }, [mounted, children.length, columnMinWidth, gap]);
+  }, [mounted, children.length, columnMinWidth, gap, calculateLayout, layoutComplete]);
 
   if (!mounted) {
     // Server-side fallback to CSS Grid with proper spacing

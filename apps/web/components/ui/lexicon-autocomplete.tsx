@@ -250,7 +250,7 @@ export function LexiconAutocomplete({
             <>
               {searchQuery && (
                 <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-200">
-                  Search: "{searchQuery}"
+                  Search: &quot;{searchQuery}&quot;
                 </div>
               )}
               {suggestions.map((lexicon, index) => (
@@ -273,7 +273,7 @@ export function LexiconAutocomplete({
             </>
           ) : searchQuery ? (
             <div className="px-4 py-2 text-gray-500 text-center">
-              No lexicon terms found for "{searchQuery}"
+              No lexicon terms found for &quot;{searchQuery}&quot;
             </div>
           ) : null}
         </div>

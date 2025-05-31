@@ -41,7 +41,7 @@ export function TagsAutocomplete({
       setFilteredTags(filtered);
     }
     setHighlightedIndex(-1);
-  }, [inputValue, selectedTags]);
+  }, [inputValue, selectedTags, availableTags]);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
