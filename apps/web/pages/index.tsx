@@ -97,7 +97,7 @@ export default function Home({ isConnected }: HomeProps) {
                       Learn F3 terminology, from PAX to Q to BD. Your comprehensive guide to the language of F3.
                     </p>
                     <div className="mt-6">
-                      <Button variant="outline" className="w-full">
+                      <Button variant="red" className="w-full">
                         Browse Terminology
                       </Button>
                     </div>
