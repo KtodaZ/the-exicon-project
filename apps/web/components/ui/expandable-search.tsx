@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { Search, ExternalLink, X, BookOpen, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from './input';
 import { useDebounce } from '@/lib/hooks/use-debounce';
-import { CombinedSearchResult } from '@/pages/api/search/combined';
+import { CombinedSearchResult } from '@/types/search';
 
 interface ExpandableSearchProps {
     className?: string;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Search, BookOpen, Dumbbell, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
-import { CombinedSearchResult } from '@/pages/api/search/combined';
+import { CombinedSearchResult } from '@/types/search';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 
 interface CombinedSearchDropdownProps {

@@ -1,29 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { searchLexiconItems } from '@/lib/api/lexicon';
 import { searchExercises } from '@/lib/api/exercise';
-
-export interface CombinedSearchResult {
-  lexicon: {
-    items: Array<{
-      _id: string;
-      title: string;
-      description: string;
-      urlSlug: string;
-      type: 'lexicon';
-    }>;
-    totalCount: number;
-  };
-  exercises: {
-    items: Array<{
-      _id: string;
-      name: string;
-      description: string;
-      slug: string;
-      type: 'exercise';
-    }>;
-    totalCount: number;
-  };
-}
+import { CombinedSearchResult } from '@/types/search';
 
 export default async function handler(
   req: NextApiRequest,
@@ -57,7 +35,7 @@ export default async function handler(
       _id: exercise._id,
       name: exercise.name,
       description: exercise.description,
-      slug: exercise.slug,
+      slug: exercise.urlSlug,
       type: 'exercise' as const
     }));
 

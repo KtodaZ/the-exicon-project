@@ -18,7 +18,7 @@ export interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputEleme
 
 export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
   ({ className, onSearch, buttonText = "Search", buttonVariant = "red", showButton = true, iconSize = 4, rotatingPlaceholders, filterPills, showCombinedSearch = false, ...props }, ref) => {
-    const [value, setValue] = React.useState(props.defaultValue || "");
+    const [value, setValue] = React.useState(String(props.defaultValue || ""));
     const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = React.useState(0);
     const [isFirstShow, setIsFirstShow] = React.useState(true);
     const [showDropdown, setShowDropdown] = React.useState(false);
@@ -26,7 +26,7 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
 
     // Update internal state when defaultValue changes
     React.useEffect(() => {
-      setValue(props.defaultValue || "");
+      setValue(String(props.defaultValue || ""));
     }, [props.defaultValue]);
 
     // Handle clicks outside dropdown
@@ -87,7 +87,7 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
     };
 
     const handleFocus = () => {
-      if (showCombinedSearch && value.trim().length > 0) {
+      if (showCombinedSearch && String(value).trim().length > 0) {
         setShowDropdown(true);
       }
     };
