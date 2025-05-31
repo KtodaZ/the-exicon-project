@@ -25,7 +25,11 @@
     "lexicon:bulk-aliases": "node dist/lexicon-bulk-aliases.js",
     "lexicon:aliases-review": "node dist/lexicon-alias-review.js",
     "lexicon:fix-linebreaks": "node dist/lexicon-fix-linebreaks.js",
-    "lexicon:fix-linebreaks-apply": "node dist/lexicon-fix-linebreaks.js --fix"
+    "lexicon:fix-linebreaks-apply": "node dist/lexicon-fix-linebreaks.js --fix",
+    "lexicon:smart-formatting": "node dist/lexicon-smart-linebreak-fixer.js",
+    "lexicon:smart-formatting-apply": "node dist/lexicon-smart-linebreak-fixer.js --fix",
+    "lexicon:ai-format": "node dist/lexicon-ai-formatter.js",
+    "lexicon:bulk-ai-format": "node dist/lexicon-bulk-ai-format.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

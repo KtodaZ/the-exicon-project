@@ -265,6 +265,61 @@ Return ONLY a valid JSON array (no markdown, no explanations):`;
     }
   }
 
+  async generateLexiconFormatting(item: LexiconItem): Promise<any> {
+    const prompt = `You are improving the formatting of lexicon descriptions for F3 (fitness/workout community). Your task is to add strategic line breaks for better readability while preserving ALL original content exactly.
+
+CRITICAL RULES:
+- PRESERVE every single word, spelling, capitalization, and punctuation mark EXACTLY
+- DO NOT change any text content whatsoever
+- DO NOT fix grammar, spelling, or capitalization
+- ONLY add strategic line breaks where they improve readability
+- Keep sentences together when they flow naturally - DO NOT break sentences in the middle
+- Only add line breaks between complete sentences or at major clause boundaries
+- Add paragraph breaks (double line breaks) between distinct concepts/thoughts
+- Preserve any existing abbreviations like "(abbr. XYZ)" exactly as written
+- DO NOT add quotes around your response
+- Return only the formatted text, nothing else
+
+EXAMPLE 1 (short, keep as one line):
+INPUT: "The practice of forming a Ball of Man at the beginning of a COT in order to engender feelings of comfort and acceptance between the Pax with the purpose of creating an environment of increased vulnerability and sharing."
+OUTPUT: The practice of forming a Ball of Man at the beginning of a COT in order to engender feelings of comfort and acceptance between the Pax with the purpose of creating an environment of increased vulnerability and sharing.
+
+EXAMPLE 2 (longer text with multiple concepts):
+INPUT: "An injury sustained during a BeatDown, or less heroically (as those of us in the 3rd 500 of life know) because we slept on it wrong. Inspired by often injured NHL hockey player Dustin Penner who famously & laughingly threw his back out while eating pancakes at the breakfast table with his wife. Ironic Adjunct: he ended up being traded to another team for a 4th round pick… on National Pancake Day."
+OUTPUT: An injury sustained during a BeatDown, or less heroically (as those of us in the 3rd 500 of life know) because we slept on it wrong.
+
+Inspired by often injured NHL hockey player Dustin Penner who famously & laughingly threw his back out while eating pancakes at the breakfast table with his wife.
+
+Ironic Adjunct: he ended up being traded to another team for a 4th round pick… on National Pancake Day.
+
+Current text to format:
+${item.description}
+
+Return the text with improved formatting (no quotes, no explanations):`;
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1000,
+        temperature: 0.1
+      });
+
+      const formattedText = response.choices[0].message.content?.trim();
+      if (!formattedText) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      // Remove any quotes that might have been added
+      const cleanedFormattedText = formattedText.replace(/^["']|["']$/g, '');
+
+      return { formattedText: cleanedFormattedText };
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      throw error;
+    }
+  }
+
   private generateSlug(text: string): string {
     return text
       .toLowerCase()
