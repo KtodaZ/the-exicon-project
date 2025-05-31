@@ -7,6 +7,7 @@ import { ac, admin as adminRole, maintainer, viewer } from "./permissions";
 // Create MongoDB client and database connection
 const client = new MongoClient(process.env.MONGODB_URI!);
 const db = client.db();
+console.log('better-auth is attempting to use database:', db.databaseName);
 
 export const auth = betterAuth({
   database: mongodbAdapter(db),

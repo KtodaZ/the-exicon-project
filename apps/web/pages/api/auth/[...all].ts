@@ -52,17 +52,23 @@ const fromWebResponse = async (webResponse: Response, res: NextApiResponse) => {
 
 // For pages router, we need to export default handler
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log(`[Auth API] Request received: ${req.method} ${req.url}`);
+  if (req.method === 'POST' && req.body) {
+    console.log('[Auth API] Request body:', JSON.stringify(req.body, null, 2));
+  }
   try {
     // Convert Next.js request to Web Request
     const webRequest = toWebRequest(req);
-    
+    console.log('[Auth API] Processing request with better-auth handler...');
     // Handle the request using Better Auth's handler
     const webResponse = await auth.handler(webRequest);
+    console.log(`[Auth API] Response from better-auth handler: Status ${webResponse.status}`);
     
     // Convert Web Response back to Next.js response
     await fromWebResponse(webResponse, res);
+    console.log('[Auth API] Successfully sent response to client.');
   } catch (error) {
-    console.error('Auth handler error:', error);
+    console.error('[Auth API] Error in handler:', error);
     
     // Provide more specific error information
     if (error instanceof TypeError && error.message.includes('Invalid URL')) {
