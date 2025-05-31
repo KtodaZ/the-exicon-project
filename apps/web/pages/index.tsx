@@ -68,8 +68,8 @@ export default function Home({ isConnected }: HomeProps) {
             </div>
 
             <div className="col-span-12 md:col-span-6 lg:col-span-5">
-              <Card className="hover:shadow-lg transition-shadow duration-300 border-2 border-transparent hover:border-gray-300 h-full flex flex-col">
-                <div className="flex flex-col h-full">
+              <Card className="hover:shadow-lg transition-shadow duration-300 border-2 border-transparent hover:border-brand-red h-full flex flex-col">
+                <Link href="/lexicon" className="flex flex-col h-full">
                   <CardHeader>
                     <CardTitle className="text-2xl md:text-3xl">Lexicon</CardTitle>
                     <CardDescription>
@@ -94,15 +94,15 @@ export default function Home({ isConnected }: HomeProps) {
                       </svg>
                     </div>
                     <p className="text-gray-600 dark:text-gray-400 flex-1">
-                      Understand the specific terms and language used in F3.
+                      Learn F3 terminology, from PAX to Q to BD. Your comprehensive guide to the language of F3.
                     </p>
                     <div className="mt-6">
-                      <Button variant="outline" className="w-full" disabled>
-                        Coming Soon
+                      <Button variant="outline" className="w-full">
+                        Browse Terminology
                       </Button>
                     </div>
                   </CardContent>
-                </div>
+                </Link>
               </Card>
             </div>
           </div>

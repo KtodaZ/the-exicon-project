@@ -1,17 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { Search, ExternalLink, X } from 'lucide-react';
+import { Search, ExternalLink, X, BookOpen, Dumbbell, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from './input';
 import { useDebounce } from '@/lib/hooks/use-debounce';
-
-interface SearchResult {
-    _id: string;
-    name: string;
-    description: string;
-    urlSlug: string;
-    image_url?: string | null;
-    tags?: string[];
-}
+import { CombinedSearchResult } from '@/pages/api/search/combined';
 
 interface ExpandableSearchProps {
     className?: string;
@@ -20,13 +12,15 @@ interface ExpandableSearchProps {
 
 export function ExpandableSearch({
     className = '',
-    placeholder = 'Search exercises...'
+    placeholder = 'Search exercises and F3 terms...'
 }: ExpandableSearchProps) {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [results, setResults] = useState<CombinedSearchResult | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isLexiconCollapsed, setIsLexiconCollapsed] = useState(false);
+    const [isExercisesCollapsed, setIsExercisesCollapsed] = useState(false);
     const router = useRouter();
 
     const debouncedQuery = useDebounce(query, 300);
@@ -59,27 +53,27 @@ export function ExpandableSearch({
         }
     }, [isExpanded, isMobile]);
 
-    // Fetch search results
+    // Fetch search results from combined API
     useEffect(() => {
         async function fetchResults() {
             if (!debouncedQuery.trim() || debouncedQuery.length < 2) {
-                setResults([]);
+                setResults(null);
                 setIsLoading(false);
                 return;
             }
 
             setIsLoading(true);
             try {
-                const response = await fetch(`/api/exercises?query=${encodeURIComponent(debouncedQuery)}&limit=10`);
+                const response = await fetch(`/api/search/combined?query=${encodeURIComponent(debouncedQuery)}`);
                 if (response.ok) {
-                    const data = await response.json();
-                    setResults(data.exercises || []);
+                    const data: CombinedSearchResult = await response.json();
+                    setResults(data);
                 } else {
-                    setResults([]);
+                    setResults(null);
                 }
             } catch (error) {
                 console.error('Search error:', error);
-                setResults([]);
+                setResults(null);
             }
             setIsLoading(false);
         }
@@ -97,19 +91,30 @@ export function ExpandableSearch({
     const handleClose = () => {
         setIsExpanded(false);
         setQuery('');
-        setResults([]);
+        setResults(null);
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setQuery(e.target.value);
     };
 
-    const handleExerciseClick = (urlSlug: string) => {
+    const handleLexiconClick = (urlSlug: string) => {
         handleClose();
-        router.push(`/exicon/${urlSlug}`);
+        router.push(`/lexicon/${urlSlug}`);
     };
 
-    const handleSeeAllClick = () => {
+    const handleExerciseClick = (slug: string) => {
+        handleClose();
+        router.push(`/exicon/${slug}`);
+    };
+
+    const handleSeeAllLexiconClick = () => {
+        const searchQuery = query.trim();
+        handleClose();
+        router.push(`/lexicon?query=${encodeURIComponent(searchQuery)}`);
+    };
+
+    const handleSeeAllExercisesClick = () => {
         const searchQuery = query.trim();
         handleClose();
         router.push(`/exicon?query=${encodeURIComponent(searchQuery)}`);
@@ -118,7 +123,12 @@ export function ExpandableSearch({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (query.trim()) {
-            handleSeeAllClick();
+            // Default to lexicon search if there are lexicon results, otherwise exercises
+            if (results?.lexicon.items.length) {
+                handleSeeAllLexiconClick();
+            } else {
+                handleSeeAllExercisesClick();
+            }
         }
     };
 
@@ -126,6 +136,8 @@ export function ExpandableSearch({
         if (text.length <= maxLength) return text;
         return text.slice(0, maxLength) + '...';
     };
+
+    const hasResults = results && (results.lexicon.items.length > 0 || results.exercises.items.length > 0);
 
     // Mobile fullscreen overlay
     if (isMobile && isExpanded) {
@@ -162,40 +174,103 @@ export function ExpandableSearch({
                             <div className="animate-spin h-6 w-6 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-2"></div>
                             <p className="text-gray-500">Searching...</p>
                         </div>
-                    ) : results.length > 0 ? (
+                    ) : hasResults ? (
                         <>
-                            {results.slice(0, 5).map((exercise) => (
-                                <button
-                                    key={exercise._id}
-                                    onClick={() => handleExerciseClick(exercise.urlSlug)}
-                                    className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex-1 text-left min-w-0">
-                                            <div className="font-medium text-gray-900 dark:text-white truncate">
-                                                {exercise.name}
-                                            </div>
-                                            <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                                {truncateDescription(exercise.description)}
-                                            </div>
+                            {/* Exercise Results - Now First */}
+                            {results?.exercises.items.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={() => setIsExercisesCollapsed(!isExercisesCollapsed)}
+                                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Dumbbell className="h-4 w-4 text-brand-red" />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Exercises
+                                            </span>
                                         </div>
-                                    </div>
-                                </button>
-                            ))}
+                                        {isExercisesCollapsed ? (
+                                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                                        ) : (
+                                            <ChevronUp className="h-4 w-4 text-gray-500" />
+                                        )}
+                                    </button>
+                                    {!isExercisesCollapsed && results.exercises.items.slice(0, 4).map((item: any) => (
+                                        <button
+                                            key={item.slug}
+                                            onClick={() => handleExerciseClick(item.slug)}
+                                            className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                                                        {item.name}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                                        {truncateDescription(item.description)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={handleSeeAllExercisesClick}
+                                        className="w-full py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 text-xs"
+                                    >
+                                        See all exercise results →
+                                    </button>
+                                </>
+                            )}
 
-                            {query.trim() && (
-                                <button
-                                    onClick={handleSeeAllClick}
-                                    className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-t border-gray-200 dark:border-gray-600 text-center font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 flex items-center justify-center gap-2"
-                                >
-                                    <ExternalLink className="h-4 w-4" />
-                                    See all results
-                                </button>
+                            {/* Lexicon Results - Now Second */}
+                            {results?.lexicon.items.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={() => setIsLexiconCollapsed(!isLexiconCollapsed)}
+                                        className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <BookOpen className="h-4 w-4 text-brand-red" />
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                F3 Lexicon
+                                            </span>
+                                        </div>
+                                        {isLexiconCollapsed ? (
+                                            <ChevronDown className="h-4 w-4 text-gray-500" />
+                                        ) : (
+                                            <ChevronUp className="h-4 w-4 text-gray-500" />
+                                        )}
+                                    </button>
+                                    {!isLexiconCollapsed && results.lexicon.items.slice(0, 4).map((item: any) => (
+                                        <button
+                                            key={item.urlSlug}
+                                            onClick={() => handleLexiconClick(item.urlSlug)}
+                                            className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex-1 text-left min-w-0">
+                                                    <div className="font-medium text-gray-900 dark:text-white truncate">
+                                                        {item.title}
+                                                    </div>
+                                                    <div className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                                        {truncateDescription(item.description)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={handleSeeAllLexiconClick}
+                                        className="w-full py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 text-xs"
+                                    >
+                                        See all lexicon results →
+                                    </button>
+                                </>
                             )}
                         </>
                     ) : query.trim().length >= 2 ? (
                         <div className="p-4 text-center text-gray-500">
-                            No exercises found for &quot;{query}&quot;
+                            No results found for &quot;{query}&quot;
                         </div>
                     ) : (
                         <div className="p-4 text-center text-gray-500">
@@ -244,46 +319,112 @@ export function ExpandableSearch({
                     </form>
 
                     {/* Results dropdown */}
-                    {(query.trim().length >= 2 && (results.length > 0 || isLoading)) && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                    {(query.trim().length >= 2 && (hasResults || isLoading)) && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-[28rem] overflow-y-auto">
                             {isLoading ? (
                                 <div className="p-4 text-center text-gray-500">
                                     <div className="animate-spin h-4 w-4 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-2"></div>
                                     Searching...
                                 </div>
-                            ) : results.length > 0 ? (
+                            ) : hasResults ? (
                                 <>
-                                    {results.slice(0, 5).map((exercise) => (
-                                        <button
-                                            key={exercise._id}
-                                            onClick={() => handleExerciseClick(exercise.urlSlug)}
-                                            className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
-                                            style={{ height: '60px' }}
-                                        >
-                                            <div className="flex items-center gap-3 h-full">
-                                                <div className="flex-1 text-left min-w-0">
-                                                    <div className="font-medium text-gray-900 dark:text-white truncate text-sm">
-                                                        {exercise.name}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                                                        {truncateDescription(exercise.description)}
-                                                    </div>
+                                    {/* Exercise Results - Now First */}
+                                    {results?.exercises.items.length > 0 && (
+                                        <>
+                                            <button
+                                                onClick={() => setIsExercisesCollapsed(!isExercisesCollapsed)}
+                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Dumbbell className="h-3 w-3 text-brand-red" />
+                                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                        Exercises
+                                                    </span>
                                                 </div>
-                                            </div>
-                                        </button>
-                                    ))}
+                                                {isExercisesCollapsed ? (
+                                                    <ChevronDown className="h-3 w-3 text-gray-500" />
+                                                ) : (
+                                                    <ChevronUp className="h-3 w-3 text-gray-500" />
+                                                )}
+                                            </button>
+                                            {!isExercisesCollapsed && results.exercises.items.slice(0, 4).map((item: any) => (
+                                                <button
+                                                    key={item.slug}
+                                                    onClick={() => handleExerciseClick(item.slug)}
+                                                    className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
+                                                    style={{ height: '60px' }}
+                                                >
+                                                    <div className="flex items-center gap-3 h-full">
+                                                        <div className="flex-1 text-left min-w-0">
+                                                            <div className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                                                {item.name}
+                                                            </div>
+                                                            <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                                                {truncateDescription(item.description)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                            <button
+                                                onClick={handleSeeAllExercisesClick}
+                                                className="w-full py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 text-xs"
+                                            >
+                                                See all exercise results →
+                                            </button>
+                                        </>
+                                    )}
 
-                                    <button
-                                        onClick={handleSeeAllClick}
-                                        className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-t border-gray-200 dark:border-gray-600 text-center text-sm font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 flex items-center justify-center gap-2"
-                                    >
-                                        <ExternalLink className="h-4 w-4" />
-                                        See all results
-                                    </button>
+                                    {/* Lexicon Results - Now Second */}
+                                    {results?.lexicon.items.length > 0 && (
+                                        <>
+                                            <button
+                                                onClick={() => setIsLexiconCollapsed(!isLexiconCollapsed)}
+                                                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <BookOpen className="h-3 w-3 text-brand-red" />
+                                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                        F3 Lexicon
+                                                    </span>
+                                                </div>
+                                                {isLexiconCollapsed ? (
+                                                    <ChevronDown className="h-3 w-3 text-gray-500" />
+                                                ) : (
+                                                    <ChevronUp className="h-3 w-3 text-gray-500" />
+                                                )}
+                                            </button>
+                                            {!isLexiconCollapsed && results.lexicon.items.slice(0, 4).map((item: any) => (
+                                                <button
+                                                    key={item.urlSlug}
+                                                    onClick={() => handleLexiconClick(item.urlSlug)}
+                                                    className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-700"
+                                                    style={{ height: '60px' }}
+                                                >
+                                                    <div className="flex items-center gap-3 h-full">
+                                                        <div className="flex-1 text-left min-w-0">
+                                                            <div className="font-medium text-gray-900 dark:text-white truncate text-sm">
+                                                                {item.title}
+                                                            </div>
+                                                            <div className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                                                {truncateDescription(item.description)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                            <button
+                                                onClick={handleSeeAllLexiconClick}
+                                                className="w-full py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center font-medium text-brand-red hover:text-red-700 dark:hover:text-red-400 text-xs"
+                                            >
+                                                See all lexicon results →
+                                            </button>
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <div className="p-4 text-center text-gray-500 text-sm">
-                                    No exercises found for &quot;{query}&quot;
+                                    No results found for &quot;{query}&quot;
                                 </div>
                             )}
                         </div>

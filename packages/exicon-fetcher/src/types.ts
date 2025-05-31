@@ -108,4 +108,108 @@ export interface SimplifiedExiconItem {
 export interface EnhancedExiconItem extends SimplifiedExiconItem {
   aliases: string[];
   // Add more enhancement fields here as needed
+}
+
+// Lexicon types
+export interface LexiconCategory {
+  _id: string;
+  label: string;
+  urlSlug: string;
+  imageUrl?: string;
+  imageAltText?: string;
+  description?: string;
+  canonicalLink?: string | null;
+}
+
+export interface LexiconAuthor {
+  _id: string;
+  name: string;
+  imageUrl?: string;
+  imageAltText?: string;
+  description?: string;
+  socials?: any[];
+}
+
+export interface LexiconBlogPost {
+  _id: string;
+  title: string;
+  description: string;
+  urlSlug: string;
+  categories: LexiconCategory[];
+  tags: string[];
+  type: string;
+  imageUrl?: string;
+  imageAltText?: string;
+  blogId: string;
+  updatedAt: string;
+  author: LexiconAuthor;
+  publishedAt: string;
+  scheduledAt: string | null;
+  readTimeInMinutes: number;
+  content: string;
+}
+
+export interface LexiconBlogPostDetail {
+  _id: string;
+  title: string;
+  description: string;
+  urlSlug: string;
+  categories: LexiconCategory[];
+  tags: string[];
+  status: string;
+  locationId: string;
+  imageUrl?: string;
+  imageAltText?: string;
+  blogId: string;
+  createdAt: string;
+  updatedAt: string;
+  currentVersion: string;
+  author: LexiconAuthor;
+  publishedAt: string;
+  scheduledAt: string | null;
+  homeUrl: string;
+  externalFonts: string[];
+  rawHTML: string;
+  wordCount: number;
+  readTimeInMinutes: number;
+  metaData: {
+    scheduledBy: string | null;
+    parentTaskId: string | null;
+    childTaskId: string | null;
+    childTaskError: string | null;
+  };
+  updatedBy: string;
+  __v: number;
+}
+
+export interface LexiconApiResponse {
+  blogPosts: LexiconBlogPost[];
+  categoryDetails: any;
+  count: number;
+  traceId: string;
+}
+
+export interface LexiconContentResponse {
+  blogPost: LexiconBlogPostDetail;
+  traceId: string;
+}
+
+// Simplified lexicon item for MongoDB storage
+export interface SimplifiedLexiconItem {
+  _id: string;
+  title: string;
+  description: string;
+  urlSlug: string;
+  rawHTML: string;
+}
+
+// MongoDB lexicon document structure
+export interface MongoLexiconItem {
+  _id: string;
+  title: string;
+  description: string;
+  urlSlug: string;
+  rawHTML: string;
+  createdAt: Date;
+  updatedAt: Date;
 } 

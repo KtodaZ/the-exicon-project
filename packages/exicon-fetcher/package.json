@@ -16,7 +16,9 @@
     "test": "node dist/testBatchEnhance.js",
     "demo-ai": "node dist/demoAiSdk.js",
     "check-deps": "node dist/checkDependencies.js",
-    "upload": "node dist/uploadToMongo.js"
+    "upload": "node dist/uploadToMongo.js",
+    "fetch-lexicon": "node dist/fetchLexicon.js",
+    "upload-lexicon": "node dist/uploadLexiconToMongo.js"
   },
   "dependencies": {
     "ai": "^2.2.31",

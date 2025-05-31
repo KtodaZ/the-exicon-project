@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { ExerciseCard } from '@/components/exercise-card';
 import { TagBadge } from '@/components/ui/tag-badge';
 import { ExerciseListItem } from '@/lib/models/exercise';
-import { Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, X, Dumbbell } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { SearchBar } from '@/components/ui/searchbar';
 import { TagList } from '@/components/ui/tag-list';
@@ -20,6 +20,7 @@ import { useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { WORKOUT_TAG_CATEGORIES, type WorkoutTag } from '@/types/workout-tags';
+import CSVDownloadButton from '@/components/ui/csv-download-button';
 
 interface ExiconPageProps {
   initialExercises: ExerciseListItem[];
@@ -52,7 +53,12 @@ const fetchExercises = async ({ pageParam = 1, queryKey }: any) => {
     throw new Error('Failed to fetch exercises');
   }
 
-  return response.json();
+  const data = await response.json();
+  // Transform the response to match the expected PageData structure
+  return {
+    items: data.exercises,
+    totalCount: data.totalCount
+  };
 };
 
 export default function ExiconPage({
@@ -181,14 +187,14 @@ export default function ExiconPage({
     queryKey: ['exercises', searchQuery, activeTags],
     fetchFn: fetchExercises,
     initialData: isInitialQuery ? {
-      pages: [{ exercises: initialExercisesRef.current, totalCount: initialTotalCountRef.current }],
+      pages: [{ items: initialExercisesRef.current, totalCount: initialTotalCountRef.current }],
       pageParams: [initialPageRef.current],
     } : undefined,
     initialPageParam: 1, // Always start from page 1 for new queries
   });
 
   // Flatten all exercises from all pages
-  const exercises = data?.pages.flatMap((page: { exercises: ExerciseListItem[]; totalCount: number }) => page.exercises) ?? [];
+  const exercises = data?.pages.flatMap((page: { items: ExerciseListItem[]; totalCount: number }) => page.items) ?? [];
   const currentTotalCount = data?.pages[0]?.totalCount ?? totalCount;
 
   const toggleTag = (tag: string) => {
@@ -232,9 +238,12 @@ export default function ExiconPage({
           <div className="mb-4 pt-4">
             {/* Mobile Layout */}
             <div className="block lg:hidden text-center">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
-                Exercise Directory
-              </h1>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Dumbbell className="h-6 w-6 text-brand-red" />
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                  Exercise Directory
+                </h1>
+              </div>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4">
                 Explore all exercises. Created by PAX, for PAX.
               </p>
@@ -243,9 +252,12 @@ export default function ExiconPage({
             {/* Desktop Layout */}
             <div className="hidden lg:flex justify-between items-start">
               <div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  Exercise Directory
-                </h1>
+                <div className="flex items-center gap-3 mb-4">
+                  <Dumbbell className="h-8 w-8 text-brand-red" />
+                  <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">
+                    Exercise Directory
+                  </h1>
+                </div>
                 <p className="text-base text-gray-600 dark:text-gray-300">
                   Explore all exercises. Created by PAX, for PAX.
                 </p>
@@ -530,9 +542,16 @@ export default function ExiconPage({
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Exercises
               </h2>
-              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                {`${currentTotalCount} found`}
-              </span>
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                  {`${currentTotalCount} found`}
+                </span>
+                <CSVDownloadButton
+                  searchQuery={searchQuery}
+                  tags={activeTags}
+                  hasFiltersApplied={activeTags.length > 0 || !!searchQuery}
+                />
+              </div>
             </div>
 
             {isLoading ? (

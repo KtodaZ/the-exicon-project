@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 interface PageData<T> {
-  exercises: T[];
+  items: T[];
   totalCount: number;
 }
 
@@ -29,7 +29,7 @@ export function useInfiniteScroll<T>({
     queryFn: fetchFn,
     initialPageParam,
     getNextPageParam: (lastPage: PageData<T>, allPages: PageData<T>[]) => {
-      const totalLoaded = allPages.reduce((acc, page) => acc + page.exercises.length, 0);
+      const totalLoaded = allPages.reduce((acc, page) => acc + page.items.length, 0);
       return totalLoaded < lastPage.totalCount ? allPages.length + 1 : undefined;
     },
     ...(initialData && { initialData }),

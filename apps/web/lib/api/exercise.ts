@@ -498,6 +498,11 @@ export async function searchExercisesWithAtlas(
         filter.video_url = { $exists: true, $nin: ['', null] };
       }
 
+      // Add tag filtering (AND condition - must match ALL specified tags)
+      if (actualTags.length > 0) {
+        filter.tags = { $all: actualTags };
+      }
+
       const exercises = await collection
         .find(filter)
         .sort({ publishedAt: -1, createdAt: -1 })
@@ -540,6 +545,11 @@ export async function searchExercisesWithAtlas(
     // Add video filter if needed
     if (hasVideoFilter) {
       filter.video_url = { $exists: true, $nin: ['', null] };
+    }
+
+    // Add tag filtering (AND condition - must match ALL specified tags)
+    if (actualTags.length > 0) {
+      filter.tags = { $all: actualTags };
     }
 
     const exercises = await collection
@@ -602,6 +612,11 @@ export async function searchExercisesWithAtlas(
   // Add video filter if needed
   if (hasVideoFilter) {
     statusMatch.video_url = { $exists: true, $nin: ['', null] };
+  }
+
+  // Add tag filtering (AND condition - must match ALL specified tags)
+  if (actualTags.length > 0) {
+    statusMatch.tags = { $all: actualTags };
   }
 
   pipeline.push({
