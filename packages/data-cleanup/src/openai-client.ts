@@ -173,4 +173,104 @@ Return the cleaned text with improved formatting:`;
       throw error;
     }
   }
+
+  async generateLexiconAliases(item: LexiconItem): Promise<any> {
+    const prompt = `You are analyzing lexicon descriptions for F3 (fitness/workout community) to identify aliases or alternative names.
+
+Your task is to find phrases that indicate alternative names for the term "${item.title}". Look for patterns like:
+- "also known as"
+- "aka" or "a.k.a."
+- "sometimes called"
+- "also called"
+- "or simply"
+- "alternatively"
+- parenthetical references like "(also called X)"
+- "referred to as"
+- abbreviations that are spelled out: "HC" → "Hard Commit", "Here Count"
+
+EXAMPLES:
+Title: "Navy Seal Burpee"
+Description: "The Navy Seal burpee (or Seal Burpee) is a standard burpee..."
+Result: ["Seal Burpee"]
+
+Title: "4E"  
+Description: "The Fourth Estate consists of..."
+Result: ["Fourth Estate"]
+
+Title: "HC"
+Description: "Hard Commit, also known as Here Count..."
+Result: ["Hard Commit", "Here Count"]
+
+RULES:
+- Extract ONLY the alternative names mentioned in the text
+- Do NOT include the main title unless it appears as a variant
+- Include variations in capitalization, spelling, or abbreviations
+- Keep the exact spelling and capitalization as found in the text
+- Return an empty array if no aliases are found
+
+Current lexicon term to analyze:
+Title: "${item.title}"
+Description: "${item.description}"
+
+Return ONLY a valid JSON array (no markdown, no explanations):`;
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 500,
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      });
+
+      const content = response.choices[0].message.content?.trim();
+      if (!content) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      // Parse the JSON response - should be wrapped in an object due to json_object format
+      let result: any;
+      try {
+        result = JSON.parse(content);
+        
+        // Extract aliases array from the response object
+        let aliases: string[] = [];
+        if (result.aliases && Array.isArray(result.aliases)) {
+          aliases = result.aliases;
+        } else if (Array.isArray(result)) {
+          aliases = result;
+        } else {
+          // Try to find any array in the response
+          const values = Object.values(result);
+          const arrayValue = values.find(v => Array.isArray(v));
+          if (arrayValue) {
+            aliases = arrayValue as string[];
+          }
+        }
+        
+        // Convert to the required format with name and id
+        const formattedAliases = aliases.map(alias => ({
+          name: alias.trim(),
+          id: this.generateSlug(alias.trim())
+        }));
+
+        return { aliases: formattedAliases };
+      } catch (parseError) {
+        console.warn('Failed to parse AI response as JSON:', content);
+        return { aliases: [] };
+      }
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      throw error;
+    }
+  }
+
+  private generateSlug(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove non-alphanumeric chars except spaces and hyphens
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+  }
 }

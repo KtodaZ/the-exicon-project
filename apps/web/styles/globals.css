@@ -132,6 +132,45 @@
   .overflow-hidden {
     -webkit-mask-image: -webkit-radial-gradient(white, black);
   }
+  
+  /* Masonry layout improvements */
+  .masonry-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  .masonry-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+  }
+  
+  /* CSS Masonry layout - more reliable alternative */
+  .css-masonry-container {
+    column-fill: balance;
+    orphans: 1;
+    widows: 1;
+    will-change: min-height;
+    contain: layout style;
+  }
+  
+  .css-masonry-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    display: inline-block;
+    width: 100%;
+    vertical-align: top;
+    contain: layout style;
+  }
+  
+  /* Ensure lexicon cards have consistent spacing */
+  .lexicon-card {
+    margin-bottom: 0px !important;
+    min-height: fit-content;
+    overflow: visible;
+    box-sizing: border-box;
+  }
 }
 
 /* Billboard-style sliding animation for placeholder text */

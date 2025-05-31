@@ -28,12 +28,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       $or: [
         { title: searchRegex },
         { description: searchRegex },
+        { 'aliases.name': searchRegex },
       ],
     };
 
     const projection = returnFullObjects 
       ? {}
-      : { _id: 1, title: 1, urlSlug: 1, description: 1 };
+      : { _id: 1, title: 1, urlSlug: 1, description: 1, aliases: 1 };
 
     lexiconItems = await lexiconCollection
       .find(regexFilter, { projection })

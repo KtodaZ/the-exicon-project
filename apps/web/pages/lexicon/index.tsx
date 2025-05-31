@@ -7,7 +7,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { SearchBar } from '@/components/ui/searchbar';
 import { LexiconCard } from '@/components/lexicon-card';
-import { MasonryLayout } from '@/components/masonry-layout';
+import { CSSMasonryLayout } from '@/components/css-masonry-layout';
 import { AlphabetNav } from '@/components/alphabet-nav';
 import { Spinner } from '@/components/ui/spinner';
 import { LexiconListItem, getAllLexiconItems, getLexiconItemsByLetter } from '@/lib/api/lexicon';
@@ -376,10 +376,11 @@ export default function LexiconPage({
               </div>
             ) : itemsToShow.length > 0 ? (
               <>
-                <MasonryLayout 
+                <CSSMasonryLayout 
                   className="mb-8"
                   columnMinWidth={280}
                   gap={24}
+                  resetKey={`${searchQuery}-${activeLetter}`}
                 >
                   {itemsToShow.map((item: LexiconListItem) => (
                     <LexiconCard
@@ -388,14 +389,18 @@ export default function LexiconPage({
                       onCopyDefinition={handleCopyDefinition}
                     />
                   ))}
-                </MasonryLayout>
+                </CSSMasonryLayout>
 
                 {/* Load more for non-letter filtered results */}
                 {!activeLetter && (
                   <div
                     ref={loadMoreRef}
-                    className="flex justify-center items-center py-8"
-                    style={{ minHeight: '100px' }}
+                    className="flex justify-center items-center py-12"
+                    style={{ 
+                      minHeight: '150px',
+                      position: 'relative',
+                      zIndex: 10
+                    }}
                   >
                     {isFetchingNextPage ? (
                       <>

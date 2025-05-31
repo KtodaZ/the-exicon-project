@@ -49,7 +49,7 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
 
   return (
     <div 
-      className="group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit"
+      className="lexicon-card group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit"
       onClick={handleCardClick}
     >
       {/* First Letter Badge */}

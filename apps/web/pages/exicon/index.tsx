@@ -76,6 +76,7 @@ export default function ExiconPage({
   const [activeTags, setActiveTags] = useState<string[]>(initialTags);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Debounce the search input
   const searchQuery = useDebounce(searchInput, 300);
@@ -84,6 +85,16 @@ export default function ExiconPage({
   const initialExercisesRef = useRef(initialExercises);
   const initialTotalCountRef = useRef(totalCount);
   const initialPageRef = useRef(initialPage);
+
+  // Mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Scroll detection for minified filter view
   useEffect(() => {
@@ -95,8 +106,8 @@ export default function ExiconPage({
           const scrolled = window.scrollY > 150;
           setIsScrolled(scrolled);
 
-          // Auto-collapse categories when user starts scrolling
-          if (scrolled && showAllCategories) {
+          // Auto-collapse categories when user starts scrolling (only on desktop)
+          if (scrolled && showAllCategories && !isMobile) {
             setShowAllCategories(false);
           }
 
@@ -108,7 +119,7 @@ export default function ExiconPage({
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [showAllCategories]);
+  }, [showAllCategories, isMobile]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -397,8 +408,8 @@ export default function ExiconPage({
             </div>
 
 
-            {/* Tags - Show when not scrolled */}
-            {!isScrolled && (
+            {/* Tags - Show when not scrolled on desktop, or always on mobile */}
+            {(!isScrolled || isMobile) && (
               <div className="flex flex-col items-center">
                 <div className="flex flex-wrap gap-4 items-center justify-center mb-4">
                   {/* Simplified tag list */}
@@ -448,7 +459,7 @@ export default function ExiconPage({
             )}
 
             {/* Full Filter Categories - Show when expanded with animation */}
-            {!isScrolled && showAllCategories && (
+            {(!isScrolled || isMobile) && showAllCategories && (
               <div className="mt-6 animate-in slide-in-from-top-4 duration-500">
                 <div className="flex flex-col items-center">
                   <div className="max-w-6xl w-full">
@@ -486,8 +497,8 @@ export default function ExiconPage({
               </div>
             )}
 
-            {/* Active Filters - Only show when not scrolled */}
-            {!isScrolled && (activeTags.length > 0 || searchQuery) && (
+            {/* Active Filters - Only show when not scrolled on desktop, or always on mobile */}
+            {(!isScrolled || isMobile) && (activeTags.length > 0 || searchQuery) && (
               <div className="mt-4">
                 <ActiveFilters
                   filters={[

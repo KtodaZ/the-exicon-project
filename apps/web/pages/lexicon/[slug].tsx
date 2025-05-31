@@ -116,6 +116,12 @@ export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps
                   <h1 className="text-3xl lg:text-4xl font-bold leading-tight">
                     {item.title}
                   </h1>
+                  {/* Aliases */}
+                  {item.aliases && item.aliases.length > 0 && (
+                    <p className="text-white/90 text-lg mt-2">
+                      Also known as: {item.aliases.map(alias => alias.name).join(', ')}
+                    </p>
+                  )}
                 </div>
               </div>
 

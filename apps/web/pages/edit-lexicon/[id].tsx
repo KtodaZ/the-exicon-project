@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LexiconStatus, LexiconItem } from '@/lib/api/lexicon';
+import { LexiconStatus, LexiconItem, Alias } from '@/lib/api/lexicon';
 import { Textarea } from '../../components/ui/textarea';
 import { LexiconAutocomplete } from '../../components/ui/lexicon-autocomplete';
 import { toast } from 'sonner';
@@ -16,6 +16,7 @@ interface LexiconFormData {
   title: string;
   description: string;
   rawHTML: string;
+  aliases: Alias[];
   status: LexiconStatus;
 }
 
@@ -32,8 +33,10 @@ export default function EditLexiconPage() {
     title: '',
     description: '',
     rawHTML: '',
+    aliases: [],
     status: 'draft',
   });
+  const [newAlias, setNewAlias] = useState('');
 
   // Load lexicon data
   useEffect(() => {
@@ -54,6 +57,7 @@ export default function EditLexiconPage() {
             title: lexiconData.title || '',
             description: lexiconData.description || '',
             rawHTML: lexiconData.rawHTML || '',
+            aliases: lexiconData.aliases || [],
             status: lexiconData.status || 'draft',
           });
         } else {
@@ -80,11 +84,50 @@ export default function EditLexiconPage() {
     }
   }, [session, isPending, router]);
 
-  const handleInputChange = (field: keyof LexiconFormData, value: string) => {
+  const handleInputChange = (field: keyof LexiconFormData, value: string | Alias[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleAddAlias = (aliasName?: string) => {
+    const aliasToAdd = aliasName || newAlias;
+    if (!aliasToAdd.trim()) return;
+
+    const newAliasObj: Alias = {
+      name: aliasToAdd.trim(),
+      id: aliasToAdd.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')
+    };
+
+    // Check for duplicates (case-insensitive)
+    if (formData.aliases.some(alias => 
+      alias.name.toLowerCase() === newAliasObj.name.toLowerCase()
+    )) {
+      toast.error('This alias already exists');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      aliases: [...prev.aliases, newAliasObj]
+    }));
+    
+    setNewAlias('');
+  };
+
+  const handleRemoveAlias = (aliasToRemove: Alias) => {
+    setFormData(prev => ({
+      ...prev,
+      aliases: prev.aliases.filter(alias => alias.id !== aliasToRemove.id)
+    }));
+  };
+
+  const handleAliasKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddAlias();
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -249,6 +292,59 @@ export default function EditLexiconPage() {
                     placeholder="Provide detailed content for this lexicon item (use @ to reference other terms)"
                   />
                   <p className="mt-1 text-xs text-gray-500">You can use HTML formatting and @ to reference other lexicon terms</p>
+                </div>
+
+                {/* Aliases section */}
+                <div>
+                  <label htmlFor="aliases" className="block text-sm font-medium text-gray-700 mb-1">
+                    Aliases (optional)
+                  </label>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        id="aliases"
+                        type="text"
+                        value={newAlias}
+                        onChange={(e) => setNewAlias(e.target.value)}
+                        onKeyPress={handleAliasKeyPress}
+                        placeholder="Enter an alias or alternative name"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleAddAlias()}
+                        disabled={!newAlias.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    
+                    {/* Display current aliases */}
+                    {formData.aliases.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {formData.aliases.map((alias) => (
+                          <Badge
+                            key={alias.id}
+                            variant="secondary"
+                            className="flex items-center gap-1 px-2 py-1"
+                          >
+                            {alias.name}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveAlias(alias)}
+                              className="ml-1 text-gray-500 hover:text-gray-700"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <p className="text-xs text-gray-500">
+                      Add alternative names or abbreviations that people might use to search for this term
+                    </p>
+                  </div>
                 </div>
 
                 {permissions?.canApproveLexicon && (

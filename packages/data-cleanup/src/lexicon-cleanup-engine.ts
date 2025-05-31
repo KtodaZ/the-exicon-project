@@ -78,11 +78,17 @@ export class LexiconCleanupEngine {
       const proposedValue = result.cleanedText;
 
       // Check if there are meaningful changes
-      const normalizedCurrent = currentValue.replace(/\s+/g, ' ').trim();
-      const normalizedProposed = proposedValue.replace(/\s+/g, ' ').trim();
+      // Remove only excessive whitespace for comparison, but preserve intentional formatting differences
+      const cleanForComparison = (text: string) => text
+        .replace(/[ \t]+/g, ' ')  // Multiple spaces/tabs -> single space
+        .replace(/\n\s*\n\s*\n+/g, '\n\n')  // Multiple blank lines -> double newline
+        .trim();
       
-      if (normalizedCurrent === normalizedProposed) {
-        console.log(`  ⏭️  ${item.title}: No changes needed`);
+      const cleanedCurrent = cleanForComparison(currentValue);
+      const cleanedProposed = cleanForComparison(proposedValue);
+      
+      if (cleanedCurrent === cleanedProposed) {
+        console.log(`  ⏭️  ${item.title}: No meaningful changes needed`);
         return { success: true };
       }
 
@@ -110,7 +116,7 @@ export class LexiconCleanupEngine {
       };
 
       // Auto-approve high confidence changes
-      if (confidence >= this.config.autoApproveThreshold) {
+      if (confidence >= config.cleanup.autoApproveMinConfidence) {
         await this.applyLexiconProposal(proposal);
         console.log(`  ✅ ${item.title}: Auto-applied (confidence: ${(confidence * 100).toFixed(1)}%)`);
         return { success: true, proposal };

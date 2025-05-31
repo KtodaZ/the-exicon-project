@@ -4,12 +4,18 @@ import { cache, cacheKeys, cacheTTL } from '@/lib/redis';
 // Lexicon item interfaces
 export type LexiconStatus = 'draft' | 'submitted' | 'active' | 'archived';
 
+export interface Alias {
+  name: string;
+  id: string;
+}
+
 export interface LexiconItem {
   _id: string;
   title: string;
   description: string;
   urlSlug: string;
   rawHTML: string;
+  aliases: Alias[];
   createdAt: Date;
   updatedAt: Date;
   status: LexiconStatus;
@@ -24,6 +30,7 @@ export interface LexiconListItem {
   title: string;
   description: string;
   urlSlug: string;
+  aliases: Alias[];
   status: LexiconStatus;
   submittedBy?: string;
   submittedAt?: Date | string;
@@ -80,6 +87,10 @@ export async function getAllLexiconItems(
         title: 1,
         description: 1,
         urlSlug: 1,
+        aliases: 1,
+        status: 1,
+        submittedBy: 1,
+        submittedAt: 1,
       })
       .toArray();
 
@@ -123,7 +134,8 @@ export async function searchLexiconItems(
     const searchFilter = {
       $or: [
         { title: { $regex: query, $options: 'i' } },
-        { description: { $regex: query, $options: 'i' } }
+        { description: { $regex: query, $options: 'i' } },
+        { 'aliases.name': { $regex: query, $options: 'i' } }
       ]
     };
 
@@ -147,6 +159,10 @@ export async function searchLexiconItems(
         title: 1,
         description: 1,
         urlSlug: 1,
+        aliases: 1,
+        status: 1,
+        submittedBy: 1,
+        submittedAt: 1,
       })
       .toArray();
 
@@ -225,6 +241,10 @@ export async function getLexiconItemsByLetter(): Promise<{ [letter: string]: Lex
         title: 1,
         description: 1,
         urlSlug: 1,
+        aliases: 1,
+        status: 1,
+        submittedBy: 1,
+        submittedAt: 1,
       })
       .toArray();
 

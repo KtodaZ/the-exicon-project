@@ -20,7 +20,10 @@
     "lexicon:bulk-cleanup": "node dist/lexicon-bulk-cleanup.js",
     "lexicon:review": "node dist/lexicon-review.js",
     "lexicon:approve": "node dist/lexicon-approve.js",
-    "lexicon:bulk-approve": "node dist/lexicon-bulk-approve.js"
+    "lexicon:bulk-approve": "node dist/lexicon-bulk-approve.js",
+    "lexicon:aliases": "node dist/lexicon-alias-cleanup.js",
+    "lexicon:bulk-aliases": "node dist/lexicon-bulk-aliases.js",
+    "lexicon:aliases-review": "node dist/lexicon-alias-review.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

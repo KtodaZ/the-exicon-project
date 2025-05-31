@@ -18,6 +18,12 @@ export interface Exercise {
   slug?: string;                  // URL-friendly slug for this exercise
 }
 
+// Alias interface for lexicon items
+export interface LexiconAlias {
+  name: string;
+  id: string;
+}
+
 // Lexicon item interface for cleanup
 export interface LexiconItem {
   _id: string;
@@ -25,6 +31,7 @@ export interface LexiconItem {
   description: string;
   urlSlug: string;
   rawHTML: string;
+  aliases?: LexiconAlias[];
   createdAt?: Date;
   updatedAt?: Date;
 }

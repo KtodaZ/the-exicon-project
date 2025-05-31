@@ -43,16 +43,22 @@ export function useInfiniteScroll<T>({
       return;
     }
 
+    let debounceTimer: NodeJS.Timeout;
+
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
         if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+          // Debounce to prevent rapid firing
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            fetchNextPage();
+          }, 200);
         }
       },
       {
         root: null,
-        rootMargin: '100px',
+        rootMargin: '200px', // Increased margin to load earlier
         threshold: 0.1,
       }
     );
@@ -61,6 +67,7 @@ export function useInfiniteScroll<T>({
 
     return () => {
       observer.disconnect();
+      clearTimeout(debounceTimer);
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 

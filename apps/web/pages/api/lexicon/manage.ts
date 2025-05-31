@@ -112,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     } else if (req.method === 'PATCH') {
       // Update lexicon item status (approve, archive, etc.)
-      const { lexiconId, status, ...updateData } = req.body;
+      const { lexiconId, status, aliases, ...updateData } = req.body;
 
       if (!lexiconId) {
         return res.status(400).json({ error: 'Lexicon item ID required' });
@@ -160,6 +160,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         updatedAt: new Date(),
         ...updateData,
       };
+
+      // Handle aliases if provided
+      if (aliases !== undefined) {
+        updateDoc.aliases = Array.isArray(aliases) ? aliases : [];
+      }
 
       // Handle URL slug updates if title changed
       if (updateData.title && updateData.title !== lexiconItem.title) {
