@@ -206,16 +206,10 @@ export async function getLexiconItemBySlug(slug: string): Promise<LexiconItem | 
       return null;
     }
 
-    // Convert ObjectId to string
-    const itemWithStringId = {
-      ...item,
-      _id: item._id.toString(),
-    };
-
     console.log(`💾 Caching getLexiconItemBySlug result`);
-    await cache.set(cacheKey, itemWithStringId, cacheTTL.allExercises);
+    await cache.set(cacheKey, item, cacheTTL.allExercises);
 
-    return itemWithStringId;
+    return item;
   } catch (error) {
     console.error('Error in getLexiconItemBySlug:', error);
     throw error;

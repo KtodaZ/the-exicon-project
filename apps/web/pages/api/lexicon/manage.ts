@@ -49,22 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // If lexiconId is provided, return single lexicon item
       if (lexiconId) {
         console.log('Looking for lexicon item with ID:', lexiconId);
-        console.log('ID type:', typeof lexiconId);
 
-        // Validate ObjectId format
-        if (!ObjectId.isValid(lexiconId as string)) {
-          return res.status(400).json({ error: 'Invalid lexicon item ID format' });
-        }
-
+        // Lexicon IDs are stored as strings, not ObjectIds
         const lexiconItem = await lexiconCollection.findOne({
-          _id: new ObjectId(lexiconId as string)
+          _id: lexiconId as string
         });
 
         console.log('Lexicon item found:', lexiconItem ? 'Yes' : 'No');
-        if (lexiconItem) {
-          console.log('Lexicon title:', lexiconItem.title);
-          console.log('Lexicon status:', lexiconItem.status);
-        }
 
         if (!lexiconItem) {
           return res.status(404).json({ error: 'Lexicon item not found' });
@@ -72,10 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(200).json({
           success: true,
-          lexicon: {
-            ...lexiconItem,
-            _id: lexiconItem._id.toString(),
-          },
+          lexicon: lexiconItem,
         });
       }
 
@@ -101,10 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({
         success: true,
-        lexicon: lexiconItems.map(item => ({
-          ...item,
-          _id: item._id.toString(),
-        })),
+        lexicon: lexiconItems,
         total,
         offset: parseInt(offset as string),
         limit: parseInt(limit as string),
@@ -116,11 +101,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!lexiconId) {
         return res.status(400).json({ error: 'Lexicon item ID required' });
-      }
-
-      // Validate ObjectId format
-      if (!ObjectId.isValid(lexiconId)) {
-        return res.status(400).json({ error: 'Invalid lexicon item ID format' });
       }
 
       // Check permissions based on action
@@ -146,9 +126,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(403).json({ error: 'Insufficient permissions' });
       }
 
-      // Get the lexicon item
+      // Get the lexicon item (using string ID)
       const lexiconItem = await lexiconCollection.findOne({
-        _id: new ObjectId(lexiconId)
+        _id: lexiconId
       });
 
       if (!lexiconItem) {
@@ -173,7 +153,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Check for slug conflicts
         const existingItem = await lexiconCollection.findOne({ 
           urlSlug: newSlug,
-          _id: { $ne: new ObjectId(lexiconId) }
+          _id: { $ne: lexiconId }
         });
         
         if (existingItem) {
@@ -196,7 +176,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Update lexicon item
       const result = await lexiconCollection.updateOne(
-        { _id: new ObjectId(lexiconId) },
+        { _id: lexiconId },
         { $set: updateDoc }
       );
 
@@ -206,7 +186,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Get updated lexicon item
       const updatedLexiconItem = await lexiconCollection.findOne({
-        _id: new ObjectId(lexiconId)
+        _id: lexiconId
       });
 
       // Clear relevant caches to ensure fresh data is fetched
@@ -221,10 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.status(200).json({
         success: true,
-        lexicon: {
-          ...updatedLexiconItem,
-          _id: updatedLexiconItem!._id.toString(),
-        },
+        lexicon: updatedLexiconItem,
         message: `Lexicon item ${status ? 'status updated' : 'updated'} successfully`,
       });
 
@@ -236,14 +213,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Lexicon item ID required' });
       }
 
-      // Validate ObjectId format
-      if (!ObjectId.isValid(lexiconId)) {
-        return res.status(400).json({ error: 'Invalid lexicon item ID format' });
-      }
-
       // Get the lexicon item first
       const lexiconItem = await lexiconCollection.findOne({
-        _id: new ObjectId(lexiconId)
+        _id: lexiconId
       });
 
       if (!lexiconItem) {
@@ -269,7 +241,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Delete the lexicon item
       const deleteResult = await lexiconCollection.deleteOne({
-        _id: new ObjectId(lexiconId)
+        _id: lexiconId
       });
 
       if (deleteResult.deletedCount === 0) {
