@@ -13,6 +13,16 @@ export interface UserPermissions {
   canApproveExercise: boolean;
   canViewAllExercises: boolean;
 
+  // Lexicon permissions
+  canCreateLexicon: boolean;
+  canEditLexicon: boolean;
+  canDeleteLexicon: boolean;
+  canPublishLexicon: boolean;
+  canViewLexicon: boolean;
+  canSubmitLexicon: boolean;
+  canApproveLexicon: boolean;
+  canViewAllLexicon: boolean;
+
   // Comment permissions
   canCreateComment: boolean;
   canEditComment: boolean;
@@ -45,6 +55,16 @@ async function fetchUserPermissions(): Promise<UserPermissions> {
     canApproveExercise,
     canViewAllExercises,
 
+    // Lexicon permissions
+    canCreateLexicon,
+    canEditLexicon,
+    canDeleteLexicon,
+    canPublishLexicon,
+    canViewLexicon,
+    canSubmitLexicon,
+    canApproveLexicon,
+    canViewAllLexicon,
+
     // Comment permissions
     canCreateComment,
     canEditComment,
@@ -73,6 +93,16 @@ async function fetchUserPermissions(): Promise<UserPermissions> {
     permissions.canSubmitExercise(),
     permissions.canApproveExercise(),
     permissions.canViewAllExercises(),
+
+    // Lexicon permissions
+    permissions.canCreateLexicon(),
+    permissions.canEditLexicon(),
+    permissions.canDeleteLexicon(),
+    permissions.canPublishLexicon(),
+    permissions.canViewLexicon(),
+    permissions.canSubmitLexicon(),
+    permissions.canApproveLexicon(),
+    permissions.canViewAllLexicon(),
 
     // Comment permissions
     permissions.canCreateComment(),
@@ -104,6 +134,16 @@ async function fetchUserPermissions(): Promise<UserPermissions> {
     canSubmitExercise,
     canApproveExercise,
     canViewAllExercises,
+
+    // Lexicon permissions
+    canCreateLexicon,
+    canEditLexicon,
+    canDeleteLexicon,
+    canPublishLexicon,
+    canViewLexicon,
+    canSubmitLexicon,
+    canApproveLexicon,
+    canViewAllLexicon,
 
     // Comment permissions
     canCreateComment,

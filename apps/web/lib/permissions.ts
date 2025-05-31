@@ -1,10 +1,11 @@
 import { createAccessControl } from "better-auth/plugins/access";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 
-// Define custom statements for exercise management
+// Define custom statements for exercise and lexicon management
 export const statement = {
   ...defaultStatements, // Include default admin statements for user and session management
   exercise: ["create", "edit", "view", "delete", "publish", "submit", "approve", "view-all"],
+  lexicon: ["create", "edit", "view", "delete", "publish", "submit", "approve", "view-all"],
   comment: ["create", "edit", "delete", "moderate"],
   rating: ["create", "edit", "delete"],
 } as const;
@@ -18,6 +19,8 @@ export const admin = ac.newRole({
   ...adminAc.statements,
   // Can manage all exercises including approvals and view all statuses
   exercise: ["create", "edit", "view", "delete", "publish", "submit", "approve", "view-all"],
+  // Can manage all lexicon items including approvals and view all statuses
+  lexicon: ["create", "edit", "view", "delete", "publish", "submit", "approve", "view-all"],
   // Can moderate all comments
   comment: ["create", "edit", "delete", "moderate"],
   // Can manage all ratings
@@ -30,6 +33,8 @@ export const maintainer = ac.newRole({
   user: ["list"],
   // Can manage exercises, approve submissions, and view all statuses but not delete
   exercise: ["create", "edit", "view", "publish", "submit", "approve", "view-all"],
+  // Can manage lexicon items, approve submissions, and view all statuses but not delete
+  lexicon: ["create", "edit", "view", "publish", "submit", "approve", "view-all"],
   // Can moderate comments on their exercises
   comment: ["create", "edit", "moderate"],
   // Can create and edit ratings
@@ -40,6 +45,8 @@ export const maintainer = ac.newRole({
 export const viewer = ac.newRole({
   // Can view active exercises and submit new ones
   exercise: ["view", "submit"],
+  // Can view active lexicon items and submit new ones
+  lexicon: ["view", "submit"],
   // Can comment on exercises
   comment: ["create", "edit"], // Can only edit their own comments
   // Can rate exercises

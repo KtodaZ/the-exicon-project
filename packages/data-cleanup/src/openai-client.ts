@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { config } from './config.js';
-import { CleanupConfig, Exercise } from './types.js';
+import { CleanupConfig, Exercise, LexiconItem } from './types.js';
 
 export class OpenAIClient {
   private client: OpenAI;
@@ -107,6 +107,67 @@ Please review and improve if needed:`;
         confidence: Math.min(Math.max(parsed.confidence, 0), 1) // Clamp between 0 and 1
       };
 
+    } catch (error) {
+      console.error('OpenAI API error:', error);
+      throw error;
+    }
+  }
+
+  async generateLexiconCleanup(item: LexiconItem, field: string): Promise<any> {
+    const fieldValue = (item as any)[field];
+    if (!fieldValue) {
+      throw new Error(`Field ${field} not found or empty in lexicon item`);
+    }
+
+    const prompt = `You are cleaning up lexicon descriptions for F3 (fitness/workout community). Your task is to:
+
+1. REMOVE HTML tags, style attributes, and formatting elements
+2. IMPROVE TEXT FORMATTING with appropriate line breaks and paragraph structure
+3. PRESERVE all original words, spelling, capitalization, and punctuation EXACTLY
+
+FORMATTING EXAMPLE:
+Input: "An injury sustained during a BeatDown, or less heroically (as those of us in the 3rd 500 of life know) because we slept on it wrong. Inspired by often injured NHL hockey player Dustin Penner who famously & laughingly threw his back out while eating pancakes at the breakfast table with his wife. Ironic Adjunct: he ended up being traded to another team for a 4th round pick… on National Pancake Day."
+
+Output: "An injury sustained during a BeatDown,
+or less heroically (as those of us in the 3rd 500 of life know)
+because we slept on it wrong.
+
+Inspired by often injured NHL hockey player Dustin Penner,
+who famously & laughingly threw his back out
+while eating pancakes at the breakfast table with his wife.
+
+Ironic Adjunct:
+he ended up being traded to another team for a 4th round pick…
+on National Pancake Day."
+
+CRITICAL RULES:
+- DO NOT change any words, spelling, or punctuation
+- DO NOT fix grammar or capitalization 
+- DO NOT change "BeatDown" to "beatdown" or similar
+- DO NOT add or remove punctuation
+- DO add appropriate line breaks for readability
+- DO add blank lines between distinct thoughts/paragraphs
+- Only fix HTML entity encoding (&nbsp; → space, &amp; → &, etc.)
+
+Current text to clean:
+${fieldValue}
+
+Return the cleaned text with improved formatting:`;
+
+    try {
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1000,
+        temperature: 0.1
+      });
+
+      const cleanedText = response.choices[0].message.content?.trim();
+      if (!cleanedText) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      return { cleanedText };
     } catch (error) {
       console.error('OpenAI API error:', error);
       throw error;

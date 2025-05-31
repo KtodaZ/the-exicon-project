@@ -1,6 +1,6 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 import { config } from './config.js';
-import { Exercise, CleanupProposal } from './types.js';
+import { Exercise, CleanupProposal, LexiconItem, LexiconCleanupProposal } from './types.js';
 
 export class DatabaseManager {
   private client: MongoClient;
@@ -34,6 +34,16 @@ export class DatabaseManager {
   getProposalsCollection(): Collection<CleanupProposal> {
     if (!this.db) throw new Error('Database not connected');
     return this.db.collection<CleanupProposal>(config.mongodb.proposalCollection);
+  }
+
+  getLexiconCollection(): Collection<LexiconItem> {
+    if (!this.db) throw new Error('Database not connected');
+    return this.db.collection<LexiconItem>('lexicon');
+  }
+
+  getLexiconProposalsCollection(): Collection<LexiconCleanupProposal> {
+    if (!this.db) throw new Error('Database not connected');
+    return this.db.collection<LexiconCleanupProposal>('lexicon_cleanup_proposals');
   }
 
   async getExercisesForCleanup(field: string, limit: number = 10): Promise<Exercise[]> {
@@ -347,17 +357,21 @@ export class DatabaseManager {
   async getExercisesForTextReferenceDetection(limit: number = 10, excludeIds: string[] = []): Promise<Exercise[]> {
     const collection = this.getExercisesCollection();
 
-    // Get exercises that have text field content that hasn't been processed for references
+    // Get exercises that have text content but no referencedExercises field for 'text' processing
     const query = {
       $and: [
         {
           _id: { $nin: excludeIds } // Exclude already processed exercises
         },
         {
-          text: { $exists: true, $ne: '' } // Must have text content
+          text: {
+            $exists: true,
+            $ne: ''
+          }
+        },
+        {
+          referencedExercises: { $exists: false }
         }
-        // Note: We don't check for referencedExercises existence here since we want to process
-        // text fields separately from description fields
       ]
     };
 
@@ -365,5 +379,87 @@ export class DatabaseManager {
       .find(query as any)
       .limit(limit)
       .toArray();
+  }
+
+  // LEXICON CLEANUP METHODS
+
+  async getLexiconItemsForCleanup(field: string, limit: number = 10, excludeIds: string[] = []): Promise<LexiconItem[]> {
+    const collection = this.getLexiconCollection();
+
+    // Get lexicon items that have the field but might need improvement
+    const query: any = {
+      $and: [
+        {
+          _id: { $nin: excludeIds } // Exclude already processed items
+        },
+        {
+          [field]: { $exists: true, $nin: [null, ''] }
+        }
+      ]
+    };
+
+    return await collection
+      .find(query)
+      .limit(limit)
+      .toArray();
+  }
+
+  async saveLexiconProposal(proposal: LexiconCleanupProposal): Promise<void> {
+    const collection = this.getLexiconProposalsCollection();
+    await collection.insertOne(proposal);
+  }
+
+  async getLexiconProposalsByType(field: string, status: 'pending' | 'approved' | 'rejected' = 'pending', limit: number = 50): Promise<LexiconCleanupProposal[]> {
+    const collection = this.getLexiconProposalsCollection();
+    return await collection
+      .find({ field, status })
+      .limit(limit)
+      .toArray();
+  }
+
+  async approveLexiconProposal(proposalId: string): Promise<void> {
+    const proposalsCollection = this.getLexiconProposalsCollection();
+    const lexiconCollection = this.getLexiconCollection();
+    
+    // Import ObjectId for the proposals collection
+    const { ObjectId } = await import('mongodb');
+    
+    // Get the proposal using ObjectId (proposals use ObjectId)
+    const proposal = await proposalsCollection.findOne({ _id: new ObjectId(proposalId) });
+    if (!proposal) {
+      throw new Error(`Proposal with id ${proposalId} not found`);
+    }
+    
+    // Apply the change to the lexicon item (lexicon uses string IDs)
+    const updateDoc = {
+      $set: {
+        [proposal.field]: proposal.proposedValue,
+        updatedAt: new Date()
+      }
+    };
+    
+    await lexiconCollection.updateOne(
+      { _id: proposal.lexiconId }, // lexiconId is a string
+      updateDoc
+    );
+    
+    // Mark proposal as approved and applied (proposals use ObjectId)
+    await proposalsCollection.updateOne(
+      { _id: new ObjectId(proposalId) },
+      {
+        $set: {
+          status: 'applied' as const,
+          appliedAt: new Date()
+        }
+      }
+    );
+  }
+
+  async rejectLexiconProposal(proposalId: string): Promise<void> {
+    const collection = this.getLexiconProposalsCollection();
+    await collection.updateOne(
+      { _id: proposalId as any },
+      { $set: { status: 'rejected' as const } }
+    );
   }
 }

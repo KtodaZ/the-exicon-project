@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LexiconTextRenderer } from '@/components/ui/lexicon-text-renderer';
 import { LexiconItem, getLexiconItemBySlug } from '@/lib/api/lexicon';
 import { ArrowLeft, Copy, BookOpen } from 'lucide-react';
 
@@ -125,9 +126,12 @@ export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                     Definition
                   </h2>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
-                    {cleanDescription}
-                  </p>
+                  <div className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg">
+                    <LexiconTextRenderer 
+                      text={item.description} 
+                      showTooltips={true}
+                    />
+                  </div>
                 </div>
 
                 {/* Metadata */}

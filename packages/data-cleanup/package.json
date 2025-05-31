@@ -15,7 +15,12 @@
     "test-hybrid-references": "node dist/test-hybrid.js",
     "review-proposals": "node dist/review-proposals.js",
     "approve-proposal": "node dist/approve-proposal.js",
-    "clear-proposals": "node dist/clear-proposals.js"
+    "clear-proposals": "node dist/clear-proposals.js",
+    "lexicon:cleanup": "node dist/lexicon-cleanup.js",
+    "lexicon:bulk-cleanup": "node dist/lexicon-bulk-cleanup.js",
+    "lexicon:review": "node dist/lexicon-review.js",
+    "lexicon:approve": "node dist/lexicon-approve.js",
+    "lexicon:bulk-approve": "node dist/lexicon-bulk-approve.js"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

@@ -13,7 +13,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { LexiconListItem, getAllLexiconItems, getLexiconItemsByLetter } from '@/lib/api/lexicon';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 import { useDebounce } from '@/lib/hooks/use-debounce';
-import { BookOpen, Search, Copy } from 'lucide-react';
+import { useSession } from '@/lib/auth-client';
+import { usePermissions } from '@/lib/hooks/use-permissions';
+import { BookOpen, Search, Copy, Plus } from 'lucide-react';
 import LexiconCSVDownloadButton from '@/components/ui/lexicon-csv-download-button';
 
 interface LexiconPageProps {
@@ -51,6 +53,8 @@ export default function LexiconPage({
   initialPage
 }: LexiconPageProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const { data: permissions } = usePermissions();
   const [searchInput, setSearchInput] = useState(initialQuery);
   const [activeLetter, setActiveLetter] = useState<string | undefined>();
   const [displayItems, setDisplayItems] = useState<LexiconListItem[]>(initialItems);
@@ -227,6 +231,23 @@ export default function LexiconPage({
                   </p>
                 </div>
               </div>
+              {session?.user ? (
+                (permissions?.canSubmitLexicon || permissions?.canCreateLexicon) && (
+                  <Link href="/submit-lexicon">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Lexicon Item
+                    </Button>
+                  </Link>
+                )
+              ) : (
+                <Link href="/auth/sign-up?redirect=/submit-lexicon">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Create Lexicon Item
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -300,13 +321,42 @@ export default function LexiconPage({
 
           {/* Results section */}
           <div>
-            {/* Header with count */}
-            <div className="flex justify-between items-center mb-6">
+            {/* Mobile Layout */}
+            <div className="block lg:hidden mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {activeLetter ? `Terms starting with "${activeLetter}"` : 
+                   searchQuery ? 'Search Results' : 'All Terms'}
+                </h2>
+                {/* Simple plus icon button on mobile */}
+                {session?.user ? (
+                  (permissions?.canSubmitLexicon || permissions?.canCreateLexicon) && (
+                    <Link href="/submit-lexicon">
+                      <Button size="sm" className="flex items-center gap-1 p-2">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  )
+                ) : (
+                  <Link href="/auth/sign-up?redirect=/submit-lexicon">
+                    <Button size="sm" className="flex items-center gap-1 p-2">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {`${currentTotalCount} found`}
+              </span>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {activeLetter ? `Terms starting with "${activeLetter}"` : 
                  searchQuery ? 'Search Results' : 'All Terms'}
               </h2>
-              <div className="hidden lg:flex items-center space-x-3">
+              <div className="flex items-center space-x-3">
                 <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
                   {`${currentTotalCount} found`}
                 </span>
@@ -315,9 +365,6 @@ export default function LexiconPage({
                   hasFiltersApplied={!!searchQuery || !!activeLetter}
                 />
               </div>
-              <span className="lg:hidden text-sm text-gray-500 dark:text-gray-400 font-medium">
-                {`${currentTotalCount} found`}
-              </span>
             </div>
 
             {(isLoading && searchQuery) ? (

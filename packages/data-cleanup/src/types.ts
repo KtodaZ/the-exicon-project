@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 export interface Exercise {
   _id: string;
   name: string;
@@ -16,9 +18,34 @@ export interface Exercise {
   slug?: string;                  // URL-friendly slug for this exercise
 }
 
+// Lexicon item interface for cleanup
+export interface LexiconItem {
+  _id: string;
+  title: string;
+  description: string;
+  urlSlug: string;
+  rawHTML: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export interface CleanupProposal {
   _id?: string;
   exerciseId: string;
+  field: string;
+  currentValue: any;
+  proposedValue: any;
+  reason: string;
+  confidence: number;
+  timestamp: Date;
+  status: 'pending' | 'approved' | 'rejected' | 'applied';
+  appliedAt?: Date;
+}
+
+// Lexicon cleanup proposal interface - uses ObjectId like MongoDB
+export interface LexiconCleanupProposal {
+  _id?: ObjectId;
+  lexiconId: string;
   field: string;
   currentValue: any;
   proposedValue: any;
@@ -41,5 +68,12 @@ export interface CleanupConfig {
 export interface CleanupResult {
   success: boolean;
   proposal?: CleanupProposal;
+  error?: string;
+}
+
+// Lexicon cleanup result interface
+export interface LexiconCleanupResult {
+  success: boolean;
+  proposal?: LexiconCleanupProposal;
   error?: string;
 }

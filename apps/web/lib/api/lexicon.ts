@@ -2,6 +2,8 @@ import { getDatabase } from '@/lib/mongodb';
 import { cache, cacheKeys, cacheTTL } from '@/lib/redis';
 
 // Lexicon item interfaces
+export type LexiconStatus = 'draft' | 'submitted' | 'active' | 'archived';
+
 export interface LexiconItem {
   _id: string;
   title: string;
@@ -10,6 +12,11 @@ export interface LexiconItem {
   rawHTML: string;
   createdAt: Date;
   updatedAt: Date;
+  status: LexiconStatus;
+  submittedBy?: string;
+  submittedAt?: Date | string;
+  approvedBy?: string;
+  approvedAt?: Date | string;
 }
 
 export interface LexiconListItem {
@@ -17,6 +24,9 @@ export interface LexiconListItem {
   title: string;
   description: string;
   urlSlug: string;
+  status: LexiconStatus;
+  submittedBy?: string;
+  submittedAt?: Date | string;
 }
 
 // Get all lexicon items with pagination

@@ -7,6 +7,7 @@ import { authClient } from "./auth-client";
  */
 export async function hasPermission(permissions: {
   exercise?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
+  lexicon?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
   comment?: ("create" | "edit" | "delete" | "moderate")[];
   rating?: ("create" | "edit" | "delete")[];
   user?: ("create" | "list" | "ban" | "impersonate" | "delete" | "set-role" | "set-password")[];
@@ -32,6 +33,7 @@ export async function checkRolePermission(
   role: "admin" | "maintainer" | "viewer",
   permissions: {
     exercise?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
+    lexicon?: ("create" | "edit" | "view" | "delete" | "publish" | "submit" | "approve" | "view-all")[];
     comment?: ("create" | "edit" | "delete" | "moderate")[];
     rating?: ("create" | "edit" | "delete")[];
     user?: ("create" | "list" | "ban" | "impersonate" | "delete" | "set-role" | "set-password")[];
@@ -217,6 +219,16 @@ export const permissions = {
   canSubmitExercise: () => hasPermission({ exercise: ["submit"] }),
   canApproveExercise: () => hasPermission({ exercise: ["approve"] }),
   canViewAllExercises: () => hasPermission({ exercise: ["view-all"] }),
+
+  // Lexicon permissions
+  canCreateLexicon: () => hasPermission({ lexicon: ["create"] }),
+  canEditLexicon: () => hasPermission({ lexicon: ["edit"] }),
+  canDeleteLexicon: () => hasPermission({ lexicon: ["delete"] }),
+  canPublishLexicon: () => hasPermission({ lexicon: ["publish"] }),
+  canViewLexicon: () => hasPermission({ lexicon: ["view"] }),
+  canSubmitLexicon: () => hasPermission({ lexicon: ["submit"] }),
+  canApproveLexicon: () => hasPermission({ lexicon: ["approve"] }),
+  canViewAllLexicon: () => hasPermission({ lexicon: ["view-all"] }),
 
   // Comment permissions
   canCreateComment: () => hasPermission({ comment: ["create"] }),
