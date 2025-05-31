@@ -51,7 +51,7 @@ export default async function handler(
       return res.status(403).json({ error: 'Insufficient permissions to submit lexicon items' });
     }
 
-    const { title, description, rawHTML, aliases, status: requestedStatus } = req.body;
+    const { title, description, aliases, status: requestedStatus } = req.body;
 
     // Validate required fields
     if (!title || !description) {
@@ -92,7 +92,6 @@ export default async function handler(
     const lexiconData = {
       title: title.trim(),
       description: description.trim(),
-      rawHTML: rawHTML?.trim() || '',
       aliases: Array.isArray(aliases) ? aliases : [],
       urlSlug,
       status,

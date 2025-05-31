@@ -8,14 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LexiconStatus, Alias } from '@/lib/api/lexicon';
-import { Textarea } from '@/components/ui/textarea';
 import { LexiconAutocomplete } from '@/components/ui/lexicon-autocomplete';
 import { toast } from 'sonner';
 
 interface LexiconFormData {
   title: string;
   description: string;
-  rawHTML: string;
   aliases: Alias[];
   status: LexiconStatus;
 }
@@ -31,7 +29,6 @@ export default function SubmitLexicon() {
   const [formData, setFormData] = useState<LexiconFormData>({
     title: '',
     description: '',
-    rawHTML: '',
     aliases: [],
     status: 'draft',
   });
@@ -141,7 +138,6 @@ export default function SubmitLexicon() {
       setFormData({
         title: '',
         description: '',
-        rawHTML: '',
         aliases: [],
         status: 'draft',
       });
@@ -263,7 +259,6 @@ export default function SubmitLexicon() {
                       value={formData.description}
                       onChange={(value) => handleInputChange('description', value)}
                       placeholder="Provide a brief description of this lexicon item (use @ to reference other terms)"
-                      maxLength={500}
                     />
                   </div>
 
@@ -318,18 +313,6 @@ export default function SubmitLexicon() {
                         Add alternative names or abbreviations that people might use to search for this term
                       </p>
                     </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="rawHTML" className="block text-sm font-medium text-gray-700 mb-1">
-                      Content (optional) (use @ to reference other lexicon terms)
-                    </label>
-                    <LexiconAutocomplete
-                      value={formData.rawHTML}
-                      onChange={(value) => handleInputChange('rawHTML', value)}
-                      placeholder="Provide detailed content for this lexicon item (use @ to reference other terms)"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">You can use HTML formatting and @ to reference other lexicon terms</p>
                   </div>
 
                   {(permissions?.canApproveLexicon || permissions?.canCreateLexicon) && (
