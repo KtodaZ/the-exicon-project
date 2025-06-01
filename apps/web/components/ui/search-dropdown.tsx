@@ -127,7 +127,11 @@ export function SearchDropdown({
             </form>
 
             {isOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto overscroll-contain"
+                     style={{ 
+                       WebkitOverflowScrolling: 'touch',
+                       touchAction: 'pan-y'
+                     }}>
                     {isLoading ? (
                         <div className="p-4 text-center text-gray-500">
                             <div className="animate-spin h-4 w-4 border-2 border-brand-red border-t-transparent rounded-full mx-auto mb-2"></div>

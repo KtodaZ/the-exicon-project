@@ -186,8 +186,14 @@ export function LexiconAutocomplete({
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
+      // Reset height to calculate the new scroll height
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      // Set height based on scroll height, with min and max constraints
+      const minHeight = 120; // min-h-[120px]
+      const maxHeight = 400; // max height before scrolling
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+      textareaRef.current.style.height = `${newHeight}px`;
     }
   }, [value]);
 
@@ -222,10 +228,10 @@ export function LexiconAutocomplete({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-3 py-2 border rounded-md resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+          className={`w-full px-3 py-2 border rounded-md min-h-[120px] resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
             isOverLimit ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'
           } ${disabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-          rows={3}
+          style={{ height: 'auto' }}
         />
         
         {maxLength && (
@@ -239,7 +245,11 @@ export function LexiconAutocomplete({
       {showSuggestions && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto overscroll-contain"
+          style={{ 
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y'
+          }}
         >
           {isLoading ? (
             <div className="px-4 py-2 text-gray-500 text-center">

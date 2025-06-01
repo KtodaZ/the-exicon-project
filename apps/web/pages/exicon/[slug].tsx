@@ -262,6 +262,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   console.log('getServerSideProps called with slug:', slug);
 
+  // Set cache-control headers to prevent browser caching
+  context.res.setHeader(
+    'Cache-Control',
+    'no-cache, no-store, must-revalidate, max-age=0'
+  );
+
   try {
     // Directly call the database function instead of making an HTTP request
     const exercise = await getExerciseBySlug(slug);

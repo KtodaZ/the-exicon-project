@@ -58,7 +58,11 @@ export function CombinedSearchDropdown({
   const hasResults = results && (results.lexicon.items.length > 0 || results.exercises.items.length > 0);
 
   return (
-    <div className={`absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[28rem] overflow-y-auto ${className}`}>
+    <div className={`absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-[28rem] overflow-y-auto overscroll-contain ${className}`}
+         style={{ 
+           WebkitOverflowScrolling: 'touch',
+           touchAction: 'pan-y'
+         }}>
       {isLoading && (
         <div className="p-4 text-center text-gray-500 dark:text-gray-400">
           <Search className="h-4 w-4 animate-spin mx-auto mb-2" />

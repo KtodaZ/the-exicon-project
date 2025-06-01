@@ -188,7 +188,11 @@ export function TagsAutocomplete({
         {showDropdown && filteredTags.length > 0 && (
           <div 
             ref={dropdownRef}
-            className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto"
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto overscroll-contain"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}
           >
             {filteredTags.map((tag, index) => (
               <div

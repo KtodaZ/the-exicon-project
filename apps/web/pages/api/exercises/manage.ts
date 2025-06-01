@@ -186,7 +186,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           {
             tagsUpdated: !!updateData.tags,
-            clearSimilarExercises: true
+            clearSimilarExercises: true,
+            force: true
           }
         );
       }

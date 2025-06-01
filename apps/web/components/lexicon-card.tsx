@@ -14,12 +14,52 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
   const router = useRouter();
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't navigate if the click is on a link, button, or interactive element
     const target = e.target as HTMLElement;
-    if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.tagName === 'SPAN' || 
-        target.closest('a') || target.closest('button') || target.closest('.lexicon-interactive')) {
-      return;
+    
+    // Walk up the DOM tree to check if we're inside an actual link or button
+    let currentElement = target;
+    while (currentElement && currentElement !== e.currentTarget) {
+      // Check if current element is a link or button
+      if (
+        currentElement.tagName === 'A' ||
+        currentElement.tagName === 'BUTTON' ||
+        currentElement.getAttribute('role') === 'button' ||
+        currentElement.getAttribute('role') === 'link'
+      ) {
+        // We're inside an actual interactive element, don't navigate
+        return;
+      }
+      currentElement = currentElement.parentElement!;
     }
+    
+    // If we get here, we're not inside an interactive element, so navigate
+    router.push(`/lexicon/${item.urlSlug}`);
+  };
+
+  const handleCardTouch = (e: React.TouchEvent) => {
+    // For touch devices, navigate immediately on touch end to avoid hover state issues
+    const target = e.target as HTMLElement;
+    
+    // Walk up the DOM tree to check if we're inside an actual link or button
+    let currentElement = target;
+    while (currentElement && currentElement !== e.currentTarget) {
+      // Check if current element is a link or button
+      if (
+        currentElement.tagName === 'A' ||
+        currentElement.tagName === 'BUTTON' ||
+        currentElement.getAttribute('role') === 'button' ||
+        currentElement.getAttribute('role') === 'link'
+      ) {
+        // We're inside an actual interactive element, don't navigate
+        return;
+      }
+      currentElement = currentElement.parentElement!;
+    }
+    
+    // Prevent the mouse events that would follow
+    e.preventDefault();
+    
+    // Navigate to the detail page
     router.push(`/lexicon/${item.urlSlug}`);
   };
 
@@ -49,8 +89,9 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
 
   return (
     <div 
-      className="lexicon-card group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit"
+      className="lexicon-card group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit touch-manipulation"
       onClick={handleCardClick}
+      onTouchEnd={handleCardTouch}
     >
       {/* First Letter Badge */}
       <div className="absolute -top-3 -left-3 w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg group-hover:scale-110 transition-transform duration-200">
@@ -60,7 +101,7 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
       {/* Copy Button */}
       <button
         onClick={handleCopy}
-        className="absolute top-3 right-3 p-2 text-gray-400 hover:text-brand-red transition-colors duration-200 opacity-0 group-hover:opacity-100"
+        className="absolute top-3 right-3 p-2 text-gray-400 hover:text-brand-red transition-colors duration-200 opacity-0 group-hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 sm:opacity-100"
         title="Copy definition"
       >
         {copied ? (
@@ -83,7 +124,7 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
       )}
 
       {/* Description - natural height */}
-      <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm break-words lexicon-interactive">
+      <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm break-words">
         <LexiconTextRenderer 
           text={truncatedDescription} 
           showTooltips={true}

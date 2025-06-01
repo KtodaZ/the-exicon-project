@@ -37,6 +37,20 @@ export function ExerciseAutocomplete({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      // Reset height to calculate the new scroll height
+      inputRef.current.style.height = 'auto';
+      // Set height based on scroll height, with min and max constraints
+      const minHeight = 120; // min-h-[120px]
+      const maxHeight = 400; // max height before scrolling
+      const scrollHeight = inputRef.current.scrollHeight;
+      const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+      inputRef.current.style.height = `${newHeight}px`;
+    }
+  }, [value]);
+
   // Function to calculate display text length (excluding markdown syntax)
   const getDisplayTextLength = (text: string) => {
     // Replace markdown exercise references [Display Text](@slug) with just "Display Text"
@@ -217,15 +231,19 @@ export function ExerciseAutocomplete({
           onSelect={handleSelectionChange}
           onMouseUp={handleSelectionChange}
           placeholder={placeholder}
-          className="w-full p-3 border border-gray-300 rounded-md resize-vertical min-h-[120px] font-mono text-sm"
-          rows={6}
+          className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] font-mono text-sm overflow-hidden resize-none"
+          style={{ height: 'auto' }}
         />
 
         {/* Dropdown */}
         {showDropdown && suggestions.length > 0 && currentMention && (
           <div
             ref={dropdownRef}
-            className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-y-auto"
+            className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto overscroll-contain"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              touchAction: 'pan-y'
+            }}
           >
             <div className="px-3 py-2 bg-gray-50 border-b text-xs text-gray-600">
               {suggestions.length} exercise{suggestions.length !== 1 ? 's' : ''} found - type @ to search

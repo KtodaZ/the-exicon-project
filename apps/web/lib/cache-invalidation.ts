@@ -12,21 +12,35 @@ export async function invalidateExerciseCaches(exercise: {
 }, options?: {
     tagsUpdated?: boolean;
     clearSimilarExercises?: boolean;
+    force?: boolean;
 }): Promise<void> {
-    const { tagsUpdated = false, clearSimilarExercises = true } = options || {};
+    const { tagsUpdated = false, clearSimilarExercises = true, force = false } = options || {};
 
-    console.log(`🗑️ Invalidating caches for exercise: ${exercise.name}`);
+    console.log(`🗑️ Invalidating caches for exercise: ${exercise.name} ${force ? '(FORCE)' : ''}`);
 
     try {
         // Clear the specific exercise cache
         await cache.delete(cacheKeys.exerciseBySlug(exercise.urlSlug));
         console.log(`  ✅ Cleared exercise detail cache: ${exercise.urlSlug}`);
 
+        // If force mode, also clear any variations of the cache key
+        if (force) {
+            const variations = [
+                `${cacheKeys.exerciseBySlug(exercise.urlSlug)}_detailed`,
+                `${cacheKeys.exerciseBySlug(exercise.urlSlug)}_summary`,
+                `exercise:${exercise.urlSlug}`,
+                `exercise_detail:${exercise.urlSlug}`,
+            ];
+            
+            await Promise.all(variations.map(key => cache.delete(key)));
+            console.log(`  ✅ Cleared exercise cache variations`);
+        }
+
         // Clear exercises list caches (multiple pages and status variations)
         const statusVariations = ['active', 'submitted', 'draft', 'archived'];
         const clearPromises: Promise<void>[] = [];
 
-        for (let page = 1; page <= 5; page++) {
+        for (let page = 1; page <= 10; page++) { // Increased from 5 to 10
             // Base cache key
             clearPromises.push(cache.delete(cacheKeys.allExercises(page, 12)));
 
@@ -51,6 +65,13 @@ export async function invalidateExerciseCaches(exercise: {
         if (tagsUpdated) {
             await cache.delete(cacheKeys.popularTags());
             console.log(`  ✅ Cleared popular tags cache`);
+        }
+
+        // If force mode, clear additional caches
+        if (force) {
+            await cache.delete('search:*'); // Clear search caches
+            await cache.delete('exercises:*'); // Clear any exercise-related wildcards
+            console.log(`  ✅ Cleared additional force-mode caches`);
         }
 
         console.log(`✅ Cache invalidation complete for exercise: ${exercise.name}`);
