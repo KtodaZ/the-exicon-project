@@ -1,7 +1,7 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { LexiconListItem } from '@/lib/api/lexicon';
 import { LexiconTextRenderer } from '@/components/ui/lexicon-text-renderer';
 import { Copy, ExternalLink } from 'lucide-react';
-import { useState } from 'react';
 import { useRouter } from 'next/router';
 
 interface LexiconCardProps {
@@ -12,32 +12,52 @@ interface LexiconCardProps {
 export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
+  
+  // Track scrolling state to prevent unwanted clicks
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Detect scrolling and temporarily disable clicks
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setIsScrolling(true);
+          
+          // Clear any existing timeout
+          if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+          }
+          
+          // Set scrolling to false after a short delay
+          scrollTimeoutRef.current = setTimeout(() => {
+            setIsScrolling(false);
+          }, 150); // 150ms after scroll ends
+          
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    
-    // Walk up the DOM tree to check if we're inside an actual link or button
-    let currentElement = target;
-    while (currentElement && currentElement !== e.currentTarget) {
-      // Check if current element is a link or button
-      if (
-        currentElement.tagName === 'A' ||
-        currentElement.tagName === 'BUTTON' ||
-        currentElement.getAttribute('role') === 'button' ||
-        currentElement.getAttribute('role') === 'link'
-      ) {
-        // We're inside an actual interactive element, don't navigate
-        return;
-      }
-      currentElement = currentElement.parentElement!;
+    // Don't navigate if we're currently scrolling
+    if (isScrolling) {
+      return;
     }
-    
-    // If we get here, we're not inside an interactive element, so navigate
-    router.push(`/lexicon/${item.urlSlug}`);
-  };
 
-  const handleCardTouch = (e: React.TouchEvent) => {
-    // For touch devices, navigate immediately on touch end to avoid hover state issues
     const target = e.target as HTMLElement;
     
     // Walk up the DOM tree to check if we're inside an actual link or button
@@ -56,10 +76,7 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
       currentElement = currentElement.parentElement!;
     }
     
-    // Prevent the mouse events that would follow
-    e.preventDefault();
-    
-    // Navigate to the detail page
+    // If we get here, we're not inside an interactive element and not scrolling, so navigate
     router.push(`/lexicon/${item.urlSlug}`);
   };
 
@@ -89,9 +106,9 @@ export function LexiconCard({ item, onCopyDefinition }: LexiconCardProps) {
 
   return (
     <div 
-      className="lexicon-card group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit touch-manipulation"
+      className="lexicon-card group relative bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-red hover:shadow-lg transition-all duration-200 p-5 cursor-pointer w-full h-fit"
       onClick={handleCardClick}
-      onTouchEnd={handleCardTouch}
+      style={{ touchAction: 'manipulation' }}
     >
       {/* First Letter Badge */}
       <div className="absolute -top-3 -left-3 w-8 h-8 bg-brand-red text-white rounded-full flex items-center justify-center text-sm font-bold shadow-lg group-hover:scale-110 transition-transform duration-200">

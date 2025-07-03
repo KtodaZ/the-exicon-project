@@ -171,6 +171,22 @@
     overflow: visible;
     box-sizing: border-box;
   }
+
+  /* Improve touch device behavior for lexicon cards */
+  @media (hover: none) and (pointer: coarse) {
+    .lexicon-card:hover {
+      border-color: inherit !important;
+      box-shadow: inherit !important;
+    }
+    
+    .lexicon-card .group-hover\:scale-110 {
+      transform: none !important;
+    }
+    
+    .lexicon-card .group-hover\:opacity-100 {
+      opacity: 1 !important;
+    }
+  }
 }
 
 /* Billboard-style sliding animation for placeholder text */
