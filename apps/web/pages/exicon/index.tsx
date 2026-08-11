@@ -16,10 +16,12 @@ import { TagList } from '@/components/ui/tag-list';
 import { ActiveFilters } from '@/components/ui/active-filters';
 import { searchExercises, getAllExercises, getPopularTags } from '@/lib/api/exercise';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import { useListPageState } from '../../hooks/useListPageState';
 import { useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { WORKOUT_TAG_CATEGORIES, type WorkoutTag } from '@/types/workout-tags';
+import { uniqueById } from '@/lib/utils';
 import CSVDownloadButton from '@/components/ui/csv-download-button';
 
 interface ExiconPageProps {
@@ -31,12 +33,34 @@ interface ExiconPageProps {
   initialPage: number;
 }
 
+// Kept in sync between the server-rendered first page and the client fetches so
+// pagination offsets line up.
+const PAGE_SIZE = 24;
+
+// Normalizes the `tags` query param, which can be missing, a string or an array
+const parseTagsParam = (tags: string | string[] | undefined): string[] => {
+  if (!tags) {
+    return [];
+  }
+  const tagsArray = Array.isArray(tags) ? tags : [tags];
+  return tagsArray.filter(tag => typeof tag === 'string' && tag.length > 0);
+};
+
+const sameTags = (a: string[], b: string[]) => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  const sortedA = [...a].sort();
+  const sortedB = [...b].sort();
+  return sortedA.every((tag, index) => tag === sortedB[index]);
+};
+
 // Fetch function for TanStack Query
 const fetchExercises = async ({ pageParam = 1, queryKey }: any) => {
   const [, searchQuery, activeTags] = queryKey;
   const queryParams = new URLSearchParams();
   queryParams.append('page', pageParam.toString());
-  queryParams.append('limit', '24');
+  queryParams.append('limit', PAGE_SIZE.toString());
 
   if (searchQuery) {
     queryParams.append('query', searchQuery);
@@ -121,7 +145,10 @@ export default function ExiconPage({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [showAllCategories, isMobile]);
 
-  // Update URL when filters change
+  // Keep the URL in sync with the active filters. This is what makes the filters
+  // survive a dive-in + back (and makes a filtered list shareable / reloadable).
+  // `replace` is used instead of `push` so typing a search doesn't fill history
+  // with one entry per keystroke, and `scroll: false` keeps the current position.
   useEffect(() => {
     // Only run if router is ready and we are on the /exicon page.
     // This check helps prevent premature execution or execution on other pages if this component were reused.
@@ -129,56 +156,30 @@ export default function ExiconPage({
       return;
     }
 
-    const newPushQuery: any = {};
-    if (searchQuery) { // searchQuery is component state
-      newPushQuery.query = searchQuery;
+    const newQuery: { query?: string; tags?: string[] } = {};
+    if (searchQuery) {
+      newQuery.query = searchQuery;
     }
-    if (activeTags && activeTags.length > 0) { // activeTags is component state
-      newPushQuery.tags = activeTags;
-    }
-
-    // Normalize current relevant query params from router.query for comparison
-    const currentRouterQueryNormalized: any = {};
-    if (router.query.query && typeof router.query.query === 'string') {
-      currentRouterQueryNormalized.query = router.query.query;
+    if (activeTags.length > 0) {
+      newQuery.tags = activeTags;
     }
 
-    let currentRouterTagsSorted: string[] = [];
-    if (router.query.tags) {
-      const tagsArray = Array.isArray(router.query.tags)
-        ? router.query.tags
-        : [router.query.tags as string];
-      // Ensure tags are strings and filter out empty ones, then sort for comparison
-      currentRouterTagsSorted = tagsArray
-        .filter(tag => typeof tag === 'string' && tag.length > 0)
-        .sort();
+    const currentQuery = typeof router.query.query === 'string' ? router.query.query : '';
+    const currentTags = parseTagsParam(router.query.tags);
+
+    if (currentQuery === (newQuery.query ?? '') && sameTags(currentTags, activeTags)) {
+      return;
     }
 
-    const newPushQueryString = newPushQuery.query || "";
-    const currentRouterQueryString = currentRouterQueryNormalized.query || "";
-
-    const newPushQueryTagsSorted = newPushQuery.tags ? [...newPushQuery.tags].sort() : [];
-
-    // Check if the new query would be identical to the current one
-    const isIdentical =
-      newPushQueryString === currentRouterQueryString &&
-      newPushQueryTagsSorted.length === currentRouterTagsSorted.length &&
-      newPushQueryTagsSorted.every((tag, index) => tag === currentRouterTagsSorted[index]);
-
-    if (!isIdentical) {
-      // TEMPORARILY COMMENTING OUT ROUTER.PUSH FOR DIAGNOSTICS
-      /*
-      router.push(
-        {
-          pathname: '/exicon',
-          query: newPushQuery,
-        },
-        undefined, // \`as\` parameter
-        { shallow: false } // Explicitly use default behavior (runs GSSP)
-      );
-      */
-    }
-  }, [searchQuery, activeTags, router.isReady, router.pathname, router.query]);
+    router.replace(
+      {
+        pathname: '/exicon',
+        query: newQuery,
+      },
+      undefined,
+      { shallow: true, scroll: false }
+    );
+  }, [searchQuery, activeTags, router]);
 
   // Use the custom infinite scroll hook
   // Only use initialData if current query matches the SSR initial query
@@ -193,6 +194,7 @@ export default function ExiconPage({
     error,
     isFetchingNextPage,
     hasNextPage,
+    fetchNextPage,
     loadMoreRef,
   } = useInfiniteScroll<ExerciseListItem>({
     queryKey: ['exercises', searchQuery, activeTags],
@@ -205,8 +207,22 @@ export default function ExiconPage({
   });
 
   // Flatten all exercises from all pages
-  const exercises = data?.pages.flatMap((page: { items: ExerciseListItem[]; totalCount: number }) => page.items) ?? [];
+  const exercises = uniqueById(
+    data?.pages.flatMap((page: { items: ExerciseListItem[]; totalCount: number }) => page.items) ?? []
+  );
   const currentTotalCount = data?.pages[0]?.totalCount ?? totalCount;
+
+  // Put the user back where they were when they return from an exercise page:
+  // reload the pages they had scrolled through, then restore the scroll offset.
+  useListPageState({
+    storageKey: '/exicon',
+    itemCount: exercises.length,
+    pageCount: data?.pages.length ?? 0,
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isReady: !isLoading && exercises.length > 0
+  });
 
   const toggleTag = (tag: string) => {
     setActiveTags(prev =>
@@ -637,7 +653,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const currentPage = parseInt(page as string, 10) || 1;
   const searchQuery = query as string;
-  const selectedTags = Array.isArray(tags) ? tags as string[] : tags ? [tags as string] : [];
+  const selectedTags = parseTagsParam(tags as string | string[] | undefined);
 
   try {
     // Directly call the database functions instead of making HTTP requests
@@ -645,12 +661,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
     if (searchQuery || selectedTags.length > 0) {
       // Use search function if there's a query or tags - explicitly pass status: 'active'
-      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, 18, {
+      exercisesData = await searchExercises(searchQuery, selectedTags, currentPage, PAGE_SIZE, {
         status: 'active'
       });
     } else {
       // Use getAllExercises for the default case - explicitly pass status: 'active'
-      exercisesData = await getAllExercises(currentPage, 18, {
+      exercisesData = await getAllExercises(currentPage, PAGE_SIZE, {
         status: 'active'
       });
     }

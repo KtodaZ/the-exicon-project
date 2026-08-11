@@ -13,7 +13,9 @@ const nextConfig = {
   },
   experimental: {
     legacyBrowsers: false,
-    browsersListForSwc: true
+    browsersListForSwc: true,
+    // Restore the scroll position on back/forward instead of jumping to the top
+    scrollRestoration: true
   },
   env: {
     NEXT_PUBLIC_VERCEL_URL: process.env.VERCEL_URL
