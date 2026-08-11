@@ -5,6 +5,23 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Removes duplicate records by `_id`, keeping the first occurrence.
+ * Paginated results can overlap (the server-rendered first page and the API use
+ * slightly different sorting), which would otherwise render duplicate cards.
+ */
+export function uniqueById<T extends { _id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+
+  return items.filter(item => {
+    if (seen.has(item._id)) {
+      return false;
+    }
+    seen.add(item._id);
+    return true;
+  });
+}
+
 export function titleCase(text: string): string {
   return text.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 }

@@ -8,6 +8,7 @@ import { LexiconItem, getLexiconItemBySlug } from '@/lib/api/lexicon';
 import { useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { ArrowLeft, Copy, BookOpen, Edit } from 'lucide-react';
+import { BackLink } from '@/components/ui/back-link';
 
 interface LexiconDetailPageProps {
   item: LexiconItem | null;
@@ -32,12 +33,12 @@ export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               The term &quot;{slug}&quot; was not found in our lexicon.
             </p>
-            <Link href="/lexicon">
+            <BackLink href="/lexicon">
               <Button>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Lexicon
               </Button>
-            </Link>
+            </BackLink>
           </div>
         </div>
       </>
@@ -82,14 +83,14 @@ export default function LexiconDetailPage({ item, slug }: LexiconDetailPageProps
 
       <div className="min-h-screen bg-gray-100 dark:bg-black">
         <div className="container mx-auto py-6 px-4">
-          {/* Navigation */}
+          {/* Navigation - returns to the list with its filters and scroll position */}
           <div className="mb-8">
-            <Link href="/lexicon">
+            <BackLink href="/lexicon">
               <Button variant="ghost" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                 <ArrowLeft className="h-4 w-4" />
                 Back to Lexicon
               </Button>
-            </Link>
+            </BackLink>
           </div>
 
           {/* Main Content */}

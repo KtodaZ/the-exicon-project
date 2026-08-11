@@ -12,7 +12,9 @@ import { AlphabetNav } from '@/components/alphabet-nav';
 import { Spinner } from '@/components/ui/spinner';
 import { LexiconListItem, getAllLexiconItems, getLexiconItemsByLetter } from '@/lib/api/lexicon';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import { useListPageState } from '../../hooks/useListPageState';
 import { useDebounce } from '@/lib/hooks/use-debounce';
+import { uniqueById } from '@/lib/utils';
 import { useSession } from '@/lib/auth-client';
 import { usePermissions } from '@/lib/hooks/use-permissions';
 import { BookOpen, Search, Copy, Plus } from 'lucide-react';
@@ -23,15 +25,20 @@ interface LexiconPageProps {
   totalCount: number;
   itemsByLetter: { [letter: string]: LexiconListItem[] };
   initialQuery: string;
+  initialLetter: string;
   initialPage: number;
 }
+
+// Kept in sync between the server-rendered first page and the client fetches so
+// pagination offsets line up.
+const PAGE_SIZE = 24;
 
 // Fetch function for TanStack Query
 const fetchLexiconItems = async ({ pageParam = 1, queryKey }: any) => {
   const [, searchQuery] = queryKey;
   const queryParams = new URLSearchParams();
   queryParams.append('page', pageParam.toString());
-  queryParams.append('limit', '24');
+  queryParams.append('limit', PAGE_SIZE.toString());
 
   if (searchQuery) {
     queryParams.append('query', searchQuery);
@@ -50,14 +57,14 @@ export default function LexiconPage({
   totalCount,
   itemsByLetter,
   initialQuery,
+  initialLetter,
   initialPage
 }: LexiconPageProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const { data: permissions } = usePermissions();
   const [searchInput, setSearchInput] = useState(initialQuery);
-  const [activeLetter, setActiveLetter] = useState<string | undefined>();
-  const [displayItems, setDisplayItems] = useState<LexiconListItem[]>(initialItems);
+  const [activeLetter, setActiveLetter] = useState<string | undefined>(initialLetter || undefined);
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Debounce the search input
@@ -94,43 +101,51 @@ export default function LexiconPage({
   const handleLetterClick = (letter: string) => {
     setActiveLetter(letter);
     setSearchInput(''); // Clear search when filtering by letter
-    const letterItems = itemsByLetter[letter] || [];
-    setDisplayItems(letterItems);
   };
 
   const handleShowAll = () => {
     setActiveLetter(undefined);
     setSearchInput(''); // Clear search
-    setDisplayItems(initialItems);
   };
 
-  // Update URL when search changes
+  // Keep the URL in sync with the search and letter filters. This is what makes
+  // the filters survive a dive-in + back (and makes the view shareable).
+  // `replace` is used instead of `push` so typing a search doesn't fill history
+  // with one entry per keystroke, and `scroll: false` keeps the current position.
   useEffect(() => {
     if (!router.isReady || router.pathname !== '/lexicon') {
       return;
     }
 
-    const newQuery: any = {};
+    const newQuery: { query?: string; letter?: string } = {};
     if (searchQuery) {
       newQuery.query = searchQuery;
     }
-
-    // Only update URL if different from current
-    const currentQuery = router.query.query as string || '';
-    if (searchQuery !== currentQuery) {
-      router.push(
-        {
-          pathname: '/lexicon',
-          query: newQuery,
-        },
-        undefined,
-        { shallow: true }
-      );
+    if (activeLetter) {
+      newQuery.letter = activeLetter;
     }
-  }, [searchQuery, router.isReady, router.pathname, router.query, router]);
 
-  // Use the custom infinite scroll hook for search AND default view
-  const isInitialQuery = searchQuery === initialQuery && !activeLetter;
+    const currentQuery = typeof router.query.query === 'string' ? router.query.query : '';
+    const currentLetter = typeof router.query.letter === 'string' ? router.query.letter : '';
+
+    if (currentQuery === (newQuery.query ?? '') && currentLetter === (newQuery.letter ?? '')) {
+      return;
+    }
+
+    router.replace(
+      {
+        pathname: '/lexicon',
+        query: newQuery,
+      },
+      undefined,
+      { shallow: true, scroll: false }
+    );
+  }, [searchQuery, activeLetter, router]);
+
+  // Use the custom infinite scroll hook for search AND default view.
+  // Letter filtering happens client-side against `itemsByLetter`, so it doesn't
+  // affect whether the server-rendered first page can seed the query.
+  const isInitialQuery = searchQuery === initialQuery;
 
   const {
     data,
@@ -139,6 +154,7 @@ export default function LexiconPage({
     error,
     isFetchingNextPage,
     hasNextPage,
+    fetchNextPage,
     loadMoreRef,
   } = useInfiniteScroll<LexiconListItem>({
     queryKey: ['lexicon', searchQuery],
@@ -151,18 +167,34 @@ export default function LexiconPage({
   });
 
   // Determine what items to show
+  const loadedItems = uniqueById(
+    data?.pages.flatMap((page: { items: LexiconListItem[]; totalCount: number }) => page.items) ?? initialItems
+  );
+
   let itemsToShow: LexiconListItem[] = [];
   let currentTotalCount = totalCount;
 
   if (activeLetter) {
-    // Show filtered by letter
-    itemsToShow = displayItems;
-    currentTotalCount = displayItems.length;
+    // Show filtered by letter (grouped items come from the server)
+    itemsToShow = itemsByLetter[activeLetter] ?? [];
+    currentTotalCount = itemsToShow.length;
   } else {
     // Show search results OR default view with infinite scroll
-    itemsToShow = data?.pages.flatMap((page: { items: LexiconListItem[]; totalCount: number }) => page.items) ?? displayItems;
+    itemsToShow = loadedItems;
     currentTotalCount = data?.pages[0]?.totalCount ?? totalCount;
   }
+
+  // Put the user back where they were when they return from a term page:
+  // reload the pages they had scrolled through, then restore the scroll offset.
+  useListPageState({
+    storageKey: '/lexicon',
+    itemCount: itemsToShow.length,
+    pageCount: data?.pages.length ?? 0,
+    hasNextPage: !activeLetter && !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isReady: itemsToShow.length > 0
+  });
 
   const handleCopyDefinition = (title: string, description: string) => {
     console.log(`Copied definition for ${title}`);
@@ -437,11 +469,7 @@ export default function LexiconPage({
                 </p>
                 {(searchQuery || activeLetter) && (
                   <Button
-                    onClick={() => {
-                      setSearchInput('');
-                      setActiveLetter(undefined);
-                      setDisplayItems(initialItems);
-                    }}
+                    onClick={handleShowAll}
                     className="border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     Show all terms
@@ -457,16 +485,17 @@ export default function LexiconPage({
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { query = '', page = '1' } = context.query;
+  const { query = '', letter = '', page = '1' } = context.query;
 
   const currentPage = parseInt(page as string, 10) || 1;
   const searchQuery = query as string;
+  const activeLetter = (letter as string).slice(0, 1).toUpperCase();
 
   try {
     // Get initial items (first page)
     const initialData = searchQuery
-      ? await import('@/lib/api/lexicon').then(mod => mod.searchLexiconItems(searchQuery, currentPage, 24))
-      : await import('@/lib/api/lexicon').then(mod => mod.getAllLexiconItems(currentPage, 24));
+      ? await import('@/lib/api/lexicon').then(mod => mod.searchLexiconItems(searchQuery, currentPage, PAGE_SIZE))
+      : await import('@/lib/api/lexicon').then(mod => mod.getAllLexiconItems(currentPage, PAGE_SIZE));
 
     // Get items grouped by letter for alphabet navigation
     const itemsByLetter = await import('@/lib/api/lexicon').then(mod => mod.getLexiconItemsByLetter());
@@ -477,6 +506,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         totalCount: initialData.totalCount,
         itemsByLetter: JSON.parse(JSON.stringify(itemsByLetter)),
         initialQuery: searchQuery || '',
+        initialLetter: itemsByLetter[activeLetter] ? activeLetter : '',
         initialPage: currentPage
       }
     };
@@ -489,8 +519,9 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         totalCount: 0,
         itemsByLetter: {},
         initialQuery: searchQuery || '',
+        initialLetter: '',
         initialPage: currentPage
       }
     };
   }
-}; 
+};

@@ -14,6 +14,7 @@ import { VideoPlayer } from '@/components/video-player';
 import { ExercisePlaceholderLarge } from '@/components/ui/exercise-placeholder-large';
 import { ExercisePlaceholder } from '@/components/ui/exercise-placeholder';
 import { ExerciseTextRenderer } from '@/components/ui/exercise-text-renderer';
+import { BackLink } from '@/components/ui/back-link';
 import { getExerciseBySlug } from '@/lib/api/exercise';
 import { Settings } from 'lucide-react';
 import { ExerciseMeta } from '@/components/meta/exercise-meta';
@@ -93,9 +94,9 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
       <div className="min-h-screen bg-gray-100 dark:bg-black flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Exercise not found</h1>
-          <Link href="/exicon">
+          <BackLink href="/exicon">
             <Button variant="outline">Back to Exercises</Button>
-          </Link>
+          </BackLink>
         </div>
       </div>
     );
@@ -131,11 +132,11 @@ export default function ExerciseDetailPage({ exercise }: ExerciseDetailPageProps
 
       <div className="min-h-screen bg-gray-100 dark:bg-black">
         <div className="container mx-auto py-8">
-          {/* Back button */}
-          <Link href="/exicon" className="inline-flex items-center mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">
+          {/* Back button - returns to the list with its filters and scroll position */}
+          <BackLink href="/exicon" className="inline-flex items-center mb-6 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Exercises
-          </Link>
+          </BackLink>
 
           {/* Exercise header */}
           <div className="mb-8 pt-8">
