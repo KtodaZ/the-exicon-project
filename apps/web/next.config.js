@@ -12,8 +12,6 @@ const nextConfig = {
     ]
   },
   experimental: {
-    legacyBrowsers: false,
-    browsersListForSwc: true,
     // Restore the scroll position on back/forward instead of jumping to the top
     scrollRestoration: true
   },
